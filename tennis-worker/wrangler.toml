@@ -1,0 +1,16 @@
+name = "rally-ledger-feed"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Refresh the feed every minute.
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rally-ledger"
+database_id = "PASTE_THE_ID_FROM_d1_create_HERE"
+
+[vars]
+# Replace with your site's origin once it is hosted, e.g. "https://yourname.github.io"
+ALLOW_ORIGIN = "*"

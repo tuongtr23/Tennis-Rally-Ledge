@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="en" data-look="carbon">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Rally Ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Noto+Color+Emoji&display=swap">
+<style>
+/* Layout: navy scoreboard band on top with four tabs; one working column below, data set in condensed scoreboard type. */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#0f1b33; --muted:#5a6680; --line:#d8deea;
+  --accent:#1c4fd6; --band:#0f1b33; --band-ink:#f4f6fb; --ball:#d9f03c; --ball-ink:#10182b;
+  --live:#d32a3c; --win:#0d7a4a; --land:#c5cfe2; --court:#3b78c4; --apron:#234e86; --courtline:#ffffff;
+  --hard:#5cc4f4; --clay:#f6a77d; --grass:#90d36b; --indoor:#d8a0ec; --gold:#f2b705; --cell-ink:#0f1b33;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a1122; --surface:#121c34; --ink:#e8edf9; --muted:#95a2bf; --line:#27334f;
+  --accent:#86a6ff; --band:#060b18; --band-ink:#f4f6fb; --live:#ff6373; --win:#52d39a; --land:#2b3a5c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a1122; --surface:#121c34; --ink:#e8edf9; --muted:#95a2bf; --line:#27334f;
+  --accent:#86a6ff; --band:#060b18; --band-ink:#f4f6fb; --live:#ff6373; --win:#52d39a; --land:#2b3a5c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--band);color:var(--band-ink)}
+header .wrap{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px 24px;padding-block:10px 0}
+.brand{font:700 26px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;padding-bottom:10px}
+.brand i{font-style:normal;color:var(--ball)}
+nav{display:flex;gap:2px;margin-left:auto;max-width:100%;overflow-x:auto;scrollbar-width:none}
+nav a{white-space:nowrap}
+nav a{font:600 16px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;color:var(--band-ink);opacity:.7;text-decoration:none;padding:10px 8px 12px;border-bottom:3px solid transparent}
+nav a.on{opacity:1;border-bottom-color:var(--ball)}
+main{padding-block:20px 48px;display:flex;flex-direction:column;gap:16px}
+section{display:flex;flex-direction:column;gap:16px}
+h1{font:700 30px/1.1 var(--display);letter-spacing:.02em;text-transform:uppercase;margin:0;text-wrap:balance}
+h2{font:600 20px/1.2 var(--display);letter-spacing:.05em;text-transform:uppercase;margin:0}
+.sub{color:var(--muted);margin:0;max-width:65ch}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--gold);padding:2px 0 2px 10px;max-width:70ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
+.pad{padding:14px}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+button,select,input{font:inherit;color:inherit}
+.seg button,.btn{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 12px;cursor:pointer;font:600 15px/1.2 var(--display);letter-spacing:.05em;text-transform:uppercase}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+select,input[type=search]{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 10px;max-width:100%}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font:600 13px/1.2 var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.cc{font:600 12px var(--display);letter-spacing:.06em;color:var(--muted)}
+.seed{font:600 12px var(--display);color:var(--muted)}
+.pill{display:inline-block;font:600 12px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:3px;border:1px solid var(--line);color:var(--muted)}
+.pill.live{background:var(--live);border-color:var(--live);color:#fff}
+.pill.done{color:var(--win);border-color:var(--win)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#fff;margin-right:5px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.day{font:600 15px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+.w{font-weight:600}
+/* bracket */
+.bracket{display:grid;grid-template-columns:repeat(4,minmax(176px,1fr));gap:14px;min-width:760px;padding:14px}
+.bcol{display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.bcol>h2{font-size:15px;color:var(--muted)}
+.bm{border:1px solid var(--line);border-radius:4px;background:var(--bg);cursor:pointer;width:100%;padding:0;text-align:left;font:inherit}
+.bm.live{border-color:var(--live)}
+.bm div{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;font-size:14px}
+.bm div+div{border-top:1px solid var(--line)}
+.bm span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.bm .w span:last-child{color:var(--ink)}
+/* scoreboard */
+.sb{background:var(--band);color:var(--band-ink);border-radius:6px;overflow:hidden}
+.sbtop{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 14px;font:500 15px var(--display);letter-spacing:.06em;text-transform:uppercase}
+.sbtop .clock{margin-left:auto;display:flex;gap:14px;font-variant-numeric:tabular-nums}
+.sbtop b{font-weight:700;color:var(--ball)}
+.sb table td{border-bottom:1px solid rgba(255,255,255,.12);padding:10px 12px;font:600 24px/1 var(--display)}
+.sb td.nm{width:100%;font-size:22px;letter-spacing:.02em}
+.sb td.nm small{font:500 13px var(--display);opacity:.65;margin-left:6px}
+.sb td.set{text-align:center;min-width:38px;opacity:.6}
+.sb td.set.won{opacity:1}
+.sb td.set sup{font-size:12px}
+.sb td.pt{text-align:center;min-width:54px;background:var(--ball);color:var(--ball-ink)}
+.sb td.srv{width:20px;padding-right:0}
+.ball{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ball)}
+.sb tr.dur td{font:500 13px var(--display);letter-spacing:.06em;opacity:.75;padding:6px 12px;text-align:center;border:0}
+.sb tr.dur td:nth-child(2){text-align:left;text-transform:uppercase}
+.sbfoot{padding:10px 14px;font:600 17px var(--display);letter-spacing:.04em;text-transform:uppercase;background:var(--ball);color:var(--ball-ink)}
+/* stats */
+.stat{padding:10px 14px;border-bottom:1px solid var(--line)}
+.stat:last-child{border-bottom:0}
+.stat .top{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.stat .top b{font:600 19px var(--display)}
+.stat .top b:last-child{text-align:right}
+.stat .lab{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;text-align:center}
+.ib{width:18px;height:18px;border-radius:50%;border:1px solid var(--muted);background:none;color:var(--muted);font:italic 600 12px/1 Georgia,serif;cursor:pointer;padding:0;flex:none}
+.ib.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.bar{display:flex;gap:3px;height:5px;margin-top:6px}
+.bar i{background:var(--accent);border-radius:2px}
+.bar i+i{background:var(--clay)}
+.def{font-size:13px;color:var(--ink);background:var(--bg);border-radius:4px;padding:8px 10px;margin-top:8px}
+.heads{display:grid;grid-template-columns:1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--line);font:600 16px var(--display);letter-spacing:.05em;text-transform:uppercase}
+.heads span:last-child{text-align:right}
+.terms{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px}
+.terms span{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.feed{list-style:none;margin:0;padding:0;font-size:14px}
+.feed li{display:flex;gap:10px;padding:7px 14px;border-bottom:1px solid var(--line)}
+.feed li:last-child{border:0}
+.feed time{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.feed em{font-style:normal;font-weight:600;color:var(--live)}
+.two{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+/* players */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.tiles div{background:var(--surface);padding:12px 14px;box-shadow:0 0 0 1px var(--line)}
+.tiles b{display:block;font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.tiles span{font:500 13px var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:14px}
+.tcell{display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:4px;padding:8px 10px;color:var(--cell-ink);font-size:14px;font-weight:500}
+.tcell b{font:700 22px/1 var(--display)}
+.tcell.zero{background:none;color:var(--muted);border:1px dashed var(--line)}
+.s-hard{background:var(--hard)}.s-clay{background:var(--clay)}.s-grass{background:var(--grass)}.s-indoor{background:var(--indoor)}.s-gold{background:var(--gold)}
+ul.ach{margin:0;padding:12px 14px 12px 32px;display:flex;flex-direction:column;gap:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* compare */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;font-size:14px}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cmp{min-width:980px}
+.cmp th,.cmp td{text-align:center;border:1px solid var(--line);padding:8px 6px}
+.cmp thead th{background:var(--band);color:var(--band-ink);border-color:rgba(255,255,255,.2)}
+.cmp thead th.s-hard{background:var(--hard)}.cmp thead th.s-clay{background:var(--clay)}.cmp thead th.s-grass{background:var(--grass)}.cmp thead th.s-indoor{background:var(--indoor)}.cmp thead th.s-gold{background:var(--gold)}
+.cmp thead tr+tr th.s-hard,.cmp thead tr+tr th.s-clay,.cmp thead tr+tr th.s-grass,.cmp thead tr+tr th.s-indoor,.cmp thead tr+tr th.s-gold{color:var(--cell-ink)}
+.cmp td{font:600 18px var(--display)}
+.cmp td.s-hard,.cmp td.s-clay,.cmp td.s-grass,.cmp td.s-indoor,.cmp td.s-gold{color:var(--cell-ink)}
+.cmp td.nm{text-align:left;font:600 16px var(--body);position:sticky;left:0;background:var(--surface)}
+.cmp td.best{background:var(--gold);color:var(--cell-ink)}
+.cmp td.nil{color:var(--muted);font-weight:500}
+.flag{font-family:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif;font-size:1.15em;line-height:1;vertical-align:-1px;letter-spacing:0}
+.up{color:var(--win);font-weight:600}.dn{color:var(--live);font-weight:600}
+.finder{position:relative;flex:1 1 260px;max-width:380px}
+.finder input{width:100%}
+.sug{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:320px;overflow:auto}
+.sug li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:4px;cursor:pointer}
+.sug li[data-p]:hover,.sug li[data-p]:first-child,.sug li[data-i]:hover,.sug li[data-i]:first-child{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.sug li.none{cursor:default;color:var(--muted)}
+svg.rk{display:block;max-width:none}
+.rk .grid{stroke:var(--line);stroke-width:1}
+.rk .ax{fill:var(--muted);font:500 12px var(--body)}
+.rk .val{fill:var(--ink);font:600 13px var(--display);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.rk .ln{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.rk .pt{fill:var(--surface);stroke:var(--accent);stroke-width:2.5}
+.rk .pt.last{fill:var(--ball);stroke:var(--ink)}
+#map{height:clamp(240px,48vw,500px);background:var(--bg);border-radius:6px}
+#mdetail{line-height:1.6}
+.jvm-container{position:relative;overflow:hidden;height:100%;width:100%;touch-action:pan-y}
+.jvm-tooltip{position:absolute;display:none;z-index:20;background:var(--band);color:var(--band-ink);font:400 13px/1.5 var(--body);padding:8px 10px;border-radius:5px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none}
+.jvm-tooltip.active{display:block}
+.jvm-zoom-btn{position:absolute;left:10px;width:26px;height:26px;line-height:24px;text-align:center;font-size:18px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;cursor:pointer;user-select:none}
+.jvm-zoom-btn.jvm-zoomin{top:10px}.jvm-zoom-btn.jvm-zoomout{top:42px}
+.mk{display:inline-block;border-radius:50%;background:var(--muted);vertical-align:middle;margin-right:5px}
+a.brand{display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none}
+a.brand svg{width:26px;height:26px;flex:none}
+a.brand circle{fill:var(--ball)}a.brand path{fill:none;stroke:var(--band);stroke-width:1.7}
+.tbtn{background:none;border:1px solid rgba(255,255,255,.35);color:var(--band-ink);border-radius:4px;padding:6px 10px;margin:0 0 9px 8px;font:600 13px/1 var(--display);letter-spacing:.07em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+@media (max-width:1180px){.tbtn{order:1;margin-left:auto}nav{order:2;width:100%;margin-left:0}}
+.hero{background:var(--band);color:var(--band-ink);border-radius:6px;padding:18px}
+.hero .eye{font:600 13px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--ball)}
+.hero p{margin:4px 0 0;opacity:.85}
+.hero .btn{background:none;color:var(--band-ink);border-color:rgba(255,255,255,.35)}
+.scm{padding:12px 14px;border-top:1px solid var(--line)}
+.scm .hd,.scm .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.scm .ft{margin-top:8px;flex-wrap:wrap}
+.scm .pl{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}
+.scm .pl b{font:600 19px var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scm .pl b sup{font-size:11px}.scm .pl b i{font-style:normal;color:var(--accent);margin-left:6px}
+.ck{color:var(--win);font-weight:700}
+.h2h-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;text-align:center;background:var(--band);color:var(--band-ink);border-radius:6px;padding:22px 12px}
+.av{position:relative;overflow:hidden;display:inline-grid;place-items:center;flex:none;width:34px;aspect-ratio:1;border-radius:50%;background:var(--hard);color:var(--cell-ink);font:700 14px/1 var(--display)}
+.av.lg{width:clamp(52px,12vw,84px);font-size:clamp(18px,4vw,28px)}
+.av.b{background:var(--ball)}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.h2h-top .av{display:grid;margin:0 auto 8px}
+.mv{font:600 11px var(--body);margin-left:4px;vertical-align:super;white-space:nowrap}
+.who{display:inline-flex;align-items:center;gap:8px}
+.two.wide{grid-template-columns:minmax(0,7fr) minmax(0,3fr)}
+@media (max-width:900px){.two.wide{grid-template-columns:minmax(0,1fr)}}
+th.srt{cursor:pointer;user-select:none}
+a.btn{text-decoration:none;display:inline-block}
+.mon{display:flex;flex-direction:column;gap:8px}
+.mh{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 2px;cursor:pointer;font:600 21px var(--display);letter-spacing:.02em;text-align:left}
+.mh .cnt{color:var(--muted);font-weight:500}
+.tcard{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:14px}
+.tier{flex:none;width:112px;text-align:center;font:700 14px/1.1 var(--display);letter-spacing:.06em;text-transform:uppercase;padding:9px 6px;border-radius:4px;border:2px solid var(--line)}
+.tier.t-gs{background:var(--gold);border-color:var(--gold);color:var(--cell-ink)}
+.tier.t-fin{background:var(--indoor);border-color:var(--indoor);color:var(--cell-ink)}
+.tier.t-m{background:var(--band);border-color:var(--band);color:var(--band-ink)}
+.tier.t-500{border-color:var(--ink)}
+.ti{flex:1 1 240px;min-width:0}.ti b{font-size:17px}
+.tm{font-size:14px;color:var(--muted);min-width:70px}
+.ta{display:flex;align-items:center;gap:10px}
+.h2h-top .mid{display:flex;align-items:center;gap:clamp(8px,3vw,28px)}
+.big{font:700 clamp(40px,9vw,76px)/1 var(--display)}
+.vs{width:clamp(64px,14vw,120px);aspect-ratio:1;border:3px solid var(--hard);border-radius:50%;display:grid;place-items:center;font:600 clamp(13px,2.4vw,18px)/1.1 var(--display);text-transform:uppercase;letter-spacing:.05em}
+.h2h-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.h2h-body{grid-template-columns:minmax(0,1fr)}}
+.kv div{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.kv div:last-child{border-bottom:0}.kv span{color:var(--muted)}.kv b{font-weight:600;text-align:right}
+details.evg>summary{cursor:pointer;padding:14px;font:600 20px var(--display);letter-spacing:.03em;text-transform:uppercase;list-style-position:inside}
+details.evg .cnt{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-size:16px}
+.bm.bye{visibility:hidden}
+table.act tr.evh td{background:var(--bg);border-top:2px solid var(--line)}
+.btn[disabled]{opacity:.4;cursor:default}
+#courtcard{display:flex;flex-direction:column;gap:8px}
+.court{position:relative;width:100%;max-width:760px;margin:0 auto;aspect-ratio:520/250;border-radius:6px;overflow:hidden;background:#234e86;touch-action:pan-y}
+.court.v{aspect-ratio:250/520;width:auto;height:min(74vh,640px);max-width:100%}
+.court canvas{display:block;width:100%;height:100%}
+.cthead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.seg.sm button{padding:4px 10px;font-size:13px}
+
+/* ---------- Design looks: IBM Carbon, GitHub Primer, Microsoft Fluent 2 ---------- */
+:root[data-look] *{letter-spacing:normal!important;text-transform:none!important}
+:root[data-look] nav a{font-size:14px;font-weight:500}
+:root[data-look] h1{font-size:28px;font-weight:600}:root[data-look] h2{font-size:18px;font-weight:600}
+:root[data-look] .brand{font-size:20px;font-weight:600}
+:root[data-look] .sb table td{font-weight:500;font-variant-numeric:tabular-nums}
+:root[data-look] .tbtn{font-weight:500;border-color:color-mix(in srgb,var(--band-ink) 35%,transparent)}
+.tbtn+.tbtn{margin-left:8px!important}
+@media (max-width:560px){.lk{display:none}:root[data-look] .tbtn{padding:5px 8px;font-size:12px}:root[data-look] .brand{font-size:18px}}
+/* Carbon (g10 / g100) */
+:root[data-look=carbon]{--bg:#f4f4f4;--surface:#ffffff;--ink:#161616;--muted:#525252;--line:#e0e0e0;--accent:#0f62fe;--band:#161616;--band-ink:#f4f4f4;--ball:#0f62fe;--ball-ink:#ffffff;--live:#da1e28;--win:#198038;--land:#c6c6c6;--gold:#f1c21b;
+  --display:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;--body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif}
+:root[data-look=carbon][data-theme=dark]{--bg:#161616;--surface:#262626;--ink:#f4f4f4;--muted:#c6c6c6;--line:#393939;--accent:#78a9ff;--band:#0b0b0b;--ball:#4589ff;--live:#fa4d56;--win:#42be65;--land:#393939;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-look=carbon]:not([data-theme=light]){--bg:#161616;--surface:#262626;--ink:#f4f4f4;--muted:#c6c6c6;--line:#393939;--accent:#78a9ff;--band:#0b0b0b;--ball:#4589ff;--live:#fa4d56;--win:#42be65;--land:#393939;color-scheme:dark}}
+:root[data-look=carbon] :is(.card,.sb,.hero,.seg button,.btn,.tbtn,select,input,.court,#map,.chips button,.pill){border-radius:0}
+:root[data-look=carbon] .sb table td:not(.nm),:root[data-look=carbon] .tiles b{font-family:"IBM Plex Mono",monospace}
+:root[data-look=carbon] nav a.on{border-bottom-width:2px}
+/* Primer (GitHub) */
+:root[data-look=primer]{--bg:#f6f8fa;--surface:#ffffff;--ink:#1f2328;--muted:#59636e;--line:#d1d9e0;--accent:#0969da;--band:#1f2328;--band-ink:#ffffff;--ball:#fd8c73;--ball-ink:#1f2328;--live:#cf222e;--win:#1a7f37;--land:#d1d9e0;--gold:#bf8700;
+  --display:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;--body:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}
+:root[data-look=primer][data-theme=dark]{--bg:#0d1117;--surface:#151b23;--ink:#f0f6fc;--muted:#9198a1;--line:#3d444d;--accent:#4493f8;--band:#010409;--live:#f85149;--win:#3fb950;--land:#3d444d;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-look=primer]:not([data-theme=light]){--bg:#0d1117;--surface:#151b23;--ink:#f0f6fc;--muted:#9198a1;--line:#3d444d;--accent:#4493f8;--band:#010409;--live:#f85149;--win:#3fb950;--land:#3d444d;color-scheme:dark}}
+:root[data-look=primer] :is(.card,.sb,.hero,.court,#map){border-radius:6px}
+:root[data-look=primer] :is(.seg button,.btn,select,input,.tbtn){border-radius:6px}
+:root[data-look=primer] .card{box-shadow:0 1px 0 rgba(31,35,40,.04)}
+/* Fluent 2 (Microsoft) */
+:root[data-look=fluent]{--bg:#f5f5f5;--surface:#ffffff;--ink:#242424;--muted:#616161;--line:#e0e0e0;--accent:#0f6cbd;--band:#0f6cbd;--band-ink:#ffffff;--ball:#ffffff;--ball-ink:#0f6cbd;--live:#c50f1f;--win:#107c10;--land:#d1d1d1;--gold:#eaa300;
+  --display:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif;--body:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif}
+:root[data-look=fluent][data-theme=dark]{--bg:#1f1f1f;--surface:#292929;--ink:#ffffff;--muted:#adadad;--line:#3d3d3d;--accent:#479ef5;--band:#0c3b5e;--ball:#ffffff;--ball-ink:#0c3b5e;--live:#dc626d;--win:#54b054;--land:#3d3d3d;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-look=fluent]:not([data-theme=light]){--bg:#1f1f1f;--surface:#292929;--ink:#ffffff;--muted:#adadad;--line:#3d3d3d;--accent:#479ef5;--band:#0c3b5e;--ball:#ffffff;--ball-ink:#0c3b5e;--live:#dc626d;--win:#54b054;--land:#3d3d3d;color-scheme:dark}}
+:root[data-look=fluent] :is(.card,.sb,.hero,.court,#map){border-radius:8px}
+:root[data-look=fluent] :is(.seg button,.btn,select,input,.tbtn){border-radius:4px}
+:root[data-look=fluent] .card{border-color:transparent;box-shadow:0 0 2px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.14)}
+:root[data-look=fluent] .seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+
+<header><div class="wrap">
+  <a class="brand" href="#home" aria-label="Rally Ledger home"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path d="M3.6 4.9c4.2 3.4 4.2 10.8 0 14.2M20.4 4.9c-4.2 3.4-4.2 10.8 0 14.2"/></svg><span>Rally <i>Ledger</i></span></a>
+  <nav>
+    <a href="#event">Event</a><a href="#live">Live</a><a href="#players">Players</a><a href="#rankings">Rankings</a><a href="#h2h">H2H</a><a href="#compare">Compare</a><a href="#tournaments">Tournaments</a><a href="#map">Map</a>
+  </nav>
+  <button class="tbtn" id="look" type="button" title="Switch the design style">Style: Carbon</button><button class="tbtn" id="theme" type="button">Dark mode</button>
+</div></header>
+
+<main class="wrap">
+<section id="v-home">
+  <div class="two">
+    <div id="hmain" style="display:flex;flex-direction:column;gap:16px;min-width:0"></div>
+    <div class="card">
+      <div class="pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2>Scores</h2>
+        <div><b>Harbor Indoor Open</b><div class="sub" style="font-size:13px">Demo event · simulated scores</div></div>
+        <div class="seg"><button data-ev="schedule">All scores</button><button data-ev="field">Players</button><button data-ev="draw">Draw</button></div>
+      </div>
+      <div class="hscores"></div>
+    </div>
+  </div>
+</section>
+
+<section id="v-event" hidden>
+  <div id="evlist" style="display:flex;flex-direction:column;gap:16px"></div>
+  <div id="evone" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="row"><button class="btn" id="evback" type="button">← All events</button></div>
+    <div id="evhead"></div>
+    <div class="seg" id="evseg"><button data-s="schedule">Schedule</button><button data-s="field">Players &amp; seeds</button><button data-s="draw">Draw</button></div>
+    <div class="card scroll" id="evbody"></div>
+  </div>
+</section>
+
+<section id="v-live" hidden>
+  <div><h1>Match observation</h1>
+  <p class="sub">Choose an event, then a match. Real matches from the Match Charting Project replay point by point with a court view and running statistics. The Harbor Indoor Open is a simulated live demo.</p></div>
+  <div class="row">
+    <div class="finder"><input type="search" id="lev" placeholder="Search an event, e.g. Wimbledon 2019" autocomplete="off" aria-label="Choose an event"><ul class="sug" id="levs" role="listbox" hidden></ul></div>
+    <div class="finder"><input type="search" id="lmt" placeholder="Search a match or player" autocomplete="off" aria-label="Choose a match"><ul class="sug" id="lmts" role="listbox" hidden></ul></div>
+    <div class="seg" id="speed">
+      <button data-v="0">Pause</button><button data-v="1">1×</button><button data-v="5">5×</button><button data-v="25">25×</button>
+    </div>
+    <button class="btn" id="finish">Finish this match</button>
+    <button class="btn" id="restart">Restart event</button>
+  </div>
+  <div id="board"></div>
+  <div class="card pad" id="courtcard" hidden>
+    <div class="cthead"><h2>Court view</h2><div class="seg sm" id="corient" role="group" aria-label="Court orientation"><button data-o="h">Horizontal</button><button data-o="v">Vertical</button></div></div>
+    <span class="sub" id="rallyinfo" style="font-size:13px;min-height:1.4em"></span>
+    <div class="court" id="court"><canvas aria-label="Court view with the ball path of the latest point" role="img"></canvas></div>
+    <div class="legend" id="courtnote">Simulated ball tracking for the demo match.</div>
+  </div>
+  <div class="two">
+    <div class="card" id="stats"></div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="card"><div class="pad" style="padding-bottom:0"><h2>Point by point</h2></div><ul class="feed" id="feed"></ul></div>
+      <div class="card"><div class="pad" style="padding-bottom:0"><h2>Scoring terms</h2></div><div class="terms" id="terms"></div><div id="termdef" style="padding:0 14px 14px" hidden></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="v-players" hidden>
+  <div id="plist" style="display:flex;flex-direction:column;gap:16px">
+    <div><h1>Players</h1>
+    <p class="sub">The current top 100 plus every big-title winner born since 1981, including the retired ones. Select a player for titles, ranking history and season-by-season activity.</p></div>
+    <div class="row">
+      <input type="search" id="q" placeholder="Search players" aria-label="Search players">
+      <div class="seg" id="pfilter"><button data-f="all">All</button><button data-f="top">Top 100</button><button data-f="big">Big-title winners</button><button data-f="retired">Retired</button></div>
+    </div>
+    <div class="card scroll" id="ptable"></div>
+  </div>
+  <div id="pdetail" hidden style="display:flex;flex-direction:column;gap:16px"></div>
+</section>
+
+<section id="v-compare" hidden>
+  <div><h1>Big titles compared</h1>
+  <p class="sub">Search for players to line up their Grand Slams, ATP Finals, Olympic gold and Masters 1000 titles. Gold marks the best figure among the players selected.</p></div>
+  <div class="row"><div class="finder"><input type="search" id="cq" placeholder="Search a player to add" autocomplete="off" aria-label="Search a player to add to the comparison" aria-controls="csug"><ul class="sug" id="csug" role="listbox" hidden></ul></div><button class="btn" id="cnone">Clear all</button></div>
+  <div class="chips" id="chips"></div>
+  <div class="legend"><span><i class="s-hard"></i>Hard</span><span><i class="s-clay"></i>Clay</span><span><i class="s-grass"></i>Grass</span><span><i class="s-indoor"></i>Indoor</span><span><i class="s-gold"></i>Olympic gold</span></div>
+  <div class="card scroll" id="cmp"></div>
+  <p class="note">† Total includes Hamburg Masters titles (Federer 4, Nadal 1), a former Masters event with no current column. ‡ Current world No. 1 since 2 Nov 2026, streak ongoing. § 2026 year-end No. 1 already clinched. The 2026 ATP Finals had not been played when this data was compiled.</p>
+</section>
+
+<section id="v-rankings" hidden>
+  <div class="two wide">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div><h1>ATP rankings · singles</h1>
+      <p class="sub">Select a column heading to sort. Players with a profile on this site open when selected.</p></div>
+      <div class="row"><select id="rtop" aria-label="Range"><option value="100">Top 100</option><option value="50">Top 50</option><option value="20">Top 20</option><option value="10">Top 10</option></select><select id="rcty" aria-label="Country"></select><span class="pill">2026.11.09</span></div>
+      <div class="card scroll" id="rtable"></div>
+      <p class="note">The top 100, a fixed copy that does not update on its own yet: ranks 1 to 20 as published on 9 November 2026, ranks 21 to 100 from ESPN's list updated 5 November 2026. The last four columns are filled for the top 7; n/a means the figure is not loaded.</p>
+    </div>
+    <div class="card">
+      <div class="pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2>Scores</h2>
+        <div><b>Harbor Indoor Open</b><div class="sub" style="font-size:13px">Demo event · simulated scores</div></div>
+        <div class="seg"><button data-ev="schedule">All scores</button><button data-ev="field">Players</button><button data-ev="draw">Draw</button></div>
+      </div>
+      <div class="hscores"></div>
+    </div>
+  </div>
+</section>
+
+<section id="v-tournaments" hidden>
+  <div><h1>Tournaments</h1>
+  <p class="sub">The 2026 tour calendar by month. Open a month to see its events, or search by tournament, city or country.</p></div>
+  <div class="row"><input type="search" id="tq" placeholder="Search tournaments" aria-label="Search tournaments" style="flex:1 1 240px"><button class="btn" id="topen" type="button">Open all</button><a class="btn" href="tour-calendar-2026.pdf" download="tour-calendar-2026.pdf" target="_blank" rel="noopener">2026 calendar PDF</a></div>
+  <div id="tlist" style="display:flex;flex-direction:column;gap:10px"></div>
+  <p class="note">One-week events are shown on their calendar week, so a main draw can start or finish a day either side. Davis Cup qualifying ties, played at many venues, are left out.</p>
+</section>
+
+<section id="v-map" hidden>
+  <div><h1>Tour map 2026</h1>
+  <p class="sub">Every Grand Slam, ATP Finals, Masters 1000, ATP 500, ATP 250 and team-event venue of the 2026 season. Hover or tap a point for the event, its dates and how long it runs.</p></div>
+  <div class="seg" id="mfilter"><button data-c="all">All</button><button data-c="gs">Grand Slams</button><button data-c="fin">ATP Finals</button><button data-c="m">Masters 1000</button><button data-c="500">ATP 500</button><button data-c="250">ATP 250</button><button data-c="team">Team events</button><button data-c="ng">Next Gen</button></div>
+  <div class="legend"><span><i class="s-hard"></i>Hard</span><span><i class="s-clay"></i>Clay</span><span><i class="s-grass"></i>Grass</span><span><i class="s-indoor"></i>Indoor hard</span><span><span class="mk" style="width:14px;height:14px;outline:3px solid var(--gold)"></span>&nbsp;Grand Slam</span><span><span class="mk" style="width:11px;height:11px"></span>Masters 1000</span><span><span class="mk" style="width:9px;height:9px"></span>ATP 500</span><span><span class="mk" style="width:7px;height:7px"></span>ATP 250</span></div>
+  <div class="card"><div id="map"></div></div>
+  <div class="card pad" id="mdetail"></div>
+  <div class="card scroll" id="mlist"></div>
+  <p class="note">One-week events are shown Monday to Sunday of their calendar week, so a main draw can start or finish a day either side. Davis Cup qualifying ties, played at many venues, are left out.</p>
+</section>
+
+<section id="v-h2h" hidden>
+  <div><h1>Head to head</h1>
+  <p class="sub">Pick two players to set their records, titles and profiles side by side.</p></div>
+  <div class="row"><div class="finder"><input type="search" id="ha" placeholder="Search a player" autocomplete="off" aria-label="First player"><ul class="sug" id="has" role="listbox" hidden></ul></div><span class="cc">VS</span><div class="finder"><input type="search" id="hb" placeholder="Search a player" autocomplete="off" aria-label="Second player"><ul class="sug" id="hbs" role="listbox" hidden></ul></div></div>
+  <div id="hbody" style="display:flex;flex-direction:column;gap:16px"></div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const ISO={SUI:'CH',ESP:'ES',SRB:'RS',GBR:'GB',CRO:'HR',BUL:'BG',POL:'PL',GER:'DE',USA:'US',GRE:'GR',NOR:'NO',MON:'MC',AUS:'AU',ITA:'IT',DEN:'DK',FRA:'FR',CZE:'CZ',CAN:'CA',ARG:'AR',NED:'NL',BEL:'BE',KAZ:'KZ',CHI:'CL',POR:'PT',PER:'PE',HUN:'HU',PAR:'PY',HKG:'HK',CHN:'CN',SVK:'SK',BIH:'BA',GEO:'GE',BRA:'BR',JPN:'JP',KOR:'KR',IND:'IN',RSA:'ZA',COL:'CO',URU:'UY',ECU:'EC',BOL:'BO',MEX:'MX',AUT:'AT',SWE:'SE',FIN:'FI',IRL:'IE',SLO:'SI',ROU:'RO',UKR:'UA',TUN:'TN',EGY:'EG',ISR:'IL',TUR:'TR',LAT:'LV',LTU:'LT',EST:'EE',MDA:'MD',TPE:'TW',THA:'TH',NZL:'NZ',LUX:'LU',CYP:'CY',DOM:'DO',BAR:'BB',UZB:'UZ',MAR:'MA',VEN:'VE',ESA:'SV',JAM:'JM',PHI:'PH'};
+const flagOf=iso=>String.fromCodePoint(...[...iso].map(ch=>127397+ch.charCodeAt(0)));
+const fl=c=>ISO[c]?flagOf(ISO[c]):'';
+const cty=c=>c?`<span class="flag">${fl(c)}</span> ${c}`:'–';
+const COLS=['AO','RG','WB','USO','FIN','GOLD','IW','MIA','MC','MA','RO','CA','CIN','SH','PAR'];
+const COLN=['Australian Open','Roland Garros','Wimbledon','US Open','ATP Finals','Olympic gold','Indian Wells','Miami','Monte-Carlo','Madrid','Rome','Canada','Cincinnati','Shanghai','Paris'];
+const SURF=['hard','clay','grass','hard','indoor','gold','hard','hard','clay','clay','clay','hard','hard','hard','indoor'];
+const RAW=[
+['fed','Federer','Roger Federer','SUI',1981,1,[6,1,8,5,6,0,5,4,0,3,0,2,7,2,1],4,310,5],
+['waw','Wawrinka','Stan Wawrinka','SUI',1985,1,[1,1,0,1,0,0,0,0,1,0,0,0,0,0,0],0,0,0],
+['nad','Nadal','Rafael Nadal','ESP',1986,1,[2,14,2,4,0,1,3,0,11,5,10,5,1,0,0],1,209,5],
+['djo','Djokovic','Novak Djokovic','SRB',1987,0,[10,3,7,4,7,1,5,6,2,3,6,4,3,4,7],0,428,8],
+['mur','Murray','Andy Murray','GBR',1987,1,[0,0,2,1,1,2,0,2,0,2,1,3,2,3,1],0,41,1],
+['cil','Cilic','Marin Cilic','CRO',1988,0,[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0],0,0,0],
+['dim','Dimitrov','Grigor Dimitrov','BUL',1991,0,[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0],0,0,0],
+['pcb','Carreño Busta','Pablo Carreño Busta','ESP',1991,0,[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],0,0,0],
+['nor','Norrie','Cameron Norrie','GBR',1995,0,[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],0,0,0],
+['med','Medvedev','Daniil Medvedev','',1996,0,[0,0,0,1,1,0,0,1,0,0,1,1,1,1,1],0,16,0],
+['kha','Khachanov','Karen Khachanov','',1996,0,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],0,0,0],
+['cor','Coric','Borna Coric','CRO',1996,0,[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],0,0,0],
+['hur','Hurkacz','Hubert Hurkacz','POL',1997,0,[0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],0,0,0],
+['zve','Zverev','Alexander Zverev','GER',1997,0,[0,1,0,1,2,1,0,0,0,2,2,1,1,0,1],0,2,1],
+['rub','Rublev','Andrey Rublev','',1997,0,[0,0,0,0,0,0,0,0,1,1,0,0,0,0,0],0,0,0],
+['fri','Fritz','Taylor Fritz','USA',1997,0,[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],0,0,0],
+['tsi','Tsitsipas','Stefanos Tsitsipas','GRE',1998,0,[0,0,0,0,1,0,0,0,3,0,0,0,0,0,0],0,0,0],
+['ruu','Ruud','Casper Ruud','NOR',1998,0,[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],0,0,0],
+['vac','Vacherot','Valentin Vacherot','MON',1998,0,[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],0,0,0],
+['pop','Popyrin','Alexei Popyrin','AUS',1999,0,[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],0,0,0],
+['dav','Davidovich Fokina','Alejandro Davidovich Fokina','ESP',1999,0,[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],0,0,0],
+['sin','Sinner','Jannik Sinner','ITA',2001,0,[2,0,2,1,2,0,1,2,1,1,1,1,1,1,1],0,95,1],
+['dra','Draper','Jack Draper','GBR',2001,0,[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],0,0,0],
+['she','Shelton','Ben Shelton','USA',2002,0,[0,0,0,0,0,0,0,0,0,0,0,2,0,0,0],0,0,0],
+['run','Rune','Holger Rune','DEN',2003,0,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],0,0,0],
+['alc','Alcaraz','Carlos Alcaraz','ESP',2003,0,[1,2,2,2,0,0,2,1,1,2,1,0,1,0,1],0,66,2],
+['fil','Fils','Arthur Fils','FRA',2004,0,[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],0,0,0],
+['men','Mensik','Jakub Mensik','CZE',2005,0,[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],0,0,0]
+];
+const P={},PL=[];
+RAW.forEach(r=>{const p={id:r[0],n:r[1],full:r[2],c:r[3],y:r[4],ret:!!r[5],t:r[6],x:r[7],w:r[8],ye:r[9]};
+  p.total=p.t.reduce((a,b)=>a+b,0)+p.x; p.strike=p.t.filter(v=>v).length;
+  p.slams=p.t[0]+p.t[1]+p.t[2]+p.t[3]; p.masters=p.t.slice(6).reduce((a,b)=>a+b,0)+p.x; P[p.id]=p; PL.push(p)});
+
+/* ---------- demo event ---------- */
+const SEEDS=['zve','sin','alc','djo','med','fri','she','dra'];
+const RT={zve:93,sin:96,alc:96,djo:90,med:87,fri:86,she:85,dra:85,run:83,ruu:83,tsi:81,rub:82,hur:81,fil:83,men:83,dim:81};
+const DRAW=[['zve','dim'],['men','dra'],['djo','hur'],['rub','med'],['fri','fil'],['tsi','alc'],['she','ruu'],['run','sin']];
+const DAYS=['Thu 12 Nov','Fri 13 Nov','Sat 14 Nov','Sun 15 Nov','Mon 16 Nov'];
+const TIMES=['11:00','13:30','18:00','20:30'];
+const seedOf=id=>SEEDS.indexOf(id)+1;
+const sd=id=>seedOf(id)?` <span class="seed">[${seedOf(id)}]</span>`:'';
+const roundOf=i=>i<8?'Round of 16':i<12?'Quarterfinal':i<14?'Semifinal':'Final';
+function meta(i){ if(i<8)return{d:i<4?0:1,t:TIMES[i%4],court:i%2?'Court 1':'Centre Court'};
+  if(i<12)return{d:2,t:TIMES[i-8],court:'Centre Court'}; if(i<14)return{d:3,t:i===12?'14:00':'19:00',court:'Centre Court'}; return{d:4,t:'17:00',court:'Centre Court'}}
+const nextOf=i=>i<8?8+(i>>1):i<12?12+((i-8)>>1):14;
+
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const S0=()=>({ace:0,df:0,f1:0,f1in:0,f1w:0,s2:0,s2w:0,bp:0,bpw:0,win:0,ue:0,pts:0,rw:0});
+function newMatch(a,b){return{p:[a,b],sets:[[0,0]],tbs:[],sw:[0,0],pts:[0,0],tb:false,srv:0,tbStart:0,tbN:0,clock:0,setStart:0,setTimes:[],done:false,winner:null,st:[S0(),S0()],feed:[]}}
+const PT=['0','15','30','40'];
+function gameScore(m){ if(m.tb)return[String(m.pts[0]),String(m.pts[1])];
+  const[a,b]=m.pts; if(a>=3&&b>=3){ if(a===b)return['40','40']; return a>b?['AD','40']:['40','AD'] } return[PT[a],PT[b]] }
+function point(m,rnd){
+  if(m.done)return;
+  const s=m.srv,r=1-s,d=(RT[m.p[s]]-RT[m.p[r]])*0.004,ss=m.st[s],sr=m.st[r];
+  const bp=!m.tb&&m.pts[r]>=3&&m.pts[r]>m.pts[s]; if(bp)sr.bp++;
+  let w,txt; ss.f1++;
+  const first=rnd()<0.63, pre=first?'':'Fault. Second serve: ';
+  if(first){ ss.f1in++; if(rnd()<0.08+d){w=s;ss.ace++;txt='Ace by '+P[m.p[s]].n} else w=rnd()<0.69+d?s:r; if(w===s)ss.f1w++ }
+  else{ ss.s2++; if(rnd()<0.05){w=r;ss.df++;txt='Double fault by '+P[m.p[s]].n} else w=rnd()<0.52+d?s:r; if(w===s)ss.s2w++ }
+  if(!txt){ const x=rnd(); let end; if(x<0.38){m.st[w].win++;end='winner'} else if(x<0.72){m.st[1-w].ue++;end='unforced error'} else end='forced error';
+    txt=pre+P[m.p[w]].n+' wins the point ('+end+')' }
+  { const kind=txt.startsWith('Ace')?'ace':txt.startsWith('Double')?'df':'rally',err=kind==='df'||/error\)/.test(txt); let shots=kind==='rally'?Math.min(18,2+Math.floor(-Math.log(1-rnd())*2.6)):1;
+    if(kind==='rally'){const want=err?1-w:w;if((shots%2?s:r)!==want)shots++;m.rs=(m.rs||0)+shots;m.rn=(m.rn||0)+1;m.rmax=Math.max(m.rmax||0,shots)}
+    m.last={srv:s,w,shots,kind,err}; }
+  m.st[w].pts++; if(w===r)sr.rw++; if(bp&&w===r)sr.bpw++;
+  m.clock+=20+rnd()*35;
+  let tag=bp?(w===r?'Break of serve':'Break point saved'):'';
+  m.pts[w]++;
+  const idx=m.sets.length-1,cur=m.sets[idx];
+  const setWon=()=>{ m.setTimes.push(m.clock-m.setStart); m.sw[w]++; tag='Set to '+P[m.p[w]].n;
+    if(m.sw[w]===2){m.done=true;m.winner=w;m.pts=[0,0];tag='Game, set and match '+P[m.p[w]].n;return}
+    if(m.tb){m.srv=1-m.tbStart;m.tb=false} m.pts=[0,0]; m.clock+=120; m.setStart=m.clock; m.sets.push([0,0]) };
+  if(m.tb){ m.tbN++;
+    if(m.pts[w]>=7&&m.pts[w]-m.pts[1-w]>=2){cur[w]++;m.tbs[idx]=m.pts[1-w];setWon()}
+    else m.srv=((m.tbN+1)>>1)%2===0?m.tbStart:1-m.tbStart }
+  else if(m.pts[w]>=4&&m.pts[w]-m.pts[1-w]>=2){
+    cur[w]++; m.pts=[0,0]; m.srv=1-m.srv; if(!tag)tag='Game '+P[m.p[w]].n;
+    if(cur[w]>=6&&cur[w]-cur[1-w]>=2)setWon();
+    else if(cur[0]===6&&cur[1]===6){m.tb=true;m.tbStart=m.srv;m.tbN=0;tag+=' · Tiebreak'}
+    else if((cur[0]+cur[1])%2===1)m.clock+=75 }
+  const g=gameScore(m);
+  m.feed.unshift({c:m.clock,txt,tag,sc:m.done?'':(m.pts[0]+m.pts[1]?g[0]+'–'+g[1]:'')});
+  if(m.feed.length>14)m.feed.pop();
+}
+const scoreStr=m=>m.sets.map((s,i)=>s[0]+'-'+s[1]+(m.tbs[i]!=null?'('+m.tbs[i]+')':'')).join('  ');
+const clk=t=>{t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')};
+const dur=t=>{const m=Math.round(t/60);return m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+'m'};
+
+let T,cur,view,speed=1,timer,evSub='schedule',openStat=null,openTerm=null;
+function initEvent(){
+  T=[];for(let i=0;i<15;i++)T.push({i,p:i<8?DRAW[i].slice():[null,null],m:null});
+  const rng=mulberry(20261112);
+  for(let i=0;i<3;i++){T[i].m=newMatch(...T[i].p);while(!T[i].m.done)point(T[i].m,rng);advance(i)}
+  cur=3;T[3].m=newMatch(...T[3].p);view=3;
+}
+function advance(i){ if(i===14)return; const n=nextOf(i); T[n].p[i%2]=T[i].m.p[T[i].m.winner] }
+const statusOf=x=>x.m?(x.m.done?'done':'live'):'sched';
+function tick(){
+  clearTimeout(timer);
+  if(cur<15&&speed>0){ step(); }
+  const rp=cm&&tab==='live'&&cm.k<cm.m.p.length;
+  if(rp&&speed>0)chStep();
+  if((cur<15||rp)&&speed>0)timer=setTimeout(tick,Math.max(2600/speed,tab==='live'?CV.left()+700/speed:0));
+}
+function step(){
+  const x=T[cur]; point(x.m,Math.random);
+  if(x.m.done){ advance(cur); const was=cur; cur++; if(cur<15){T[cur].m=newMatch(...T[cur].p)} renderPicker(); if(view===was&&cur<15&&tab!=='live')view=cur }
+  refresh();
+  if(tab==='live'&&!am&&T[view].m===x.m)animateRally(x.m);
+}
+function refresh(){ if(tab==='event'){if(ev.mode==='demo')renderDemoEvent()} else if(tab==='live')renderLive(); else if(tab==='home'||tab==='rankings')renderScores(); }
+
+/* ---------- event tab ---------- */
+function pillOf(x){const s=statusOf(x);return s==='live'?'<span class="pill live"><span class="dot"></span>Live</span>':s==='done'?'<span class="pill done">Final</span>':'<span class="pill">Scheduled</span>'}
+const nm=id=>id?P[id].n+sd(id):'<span class="cc">To be decided</span>';
+function renderDemoEvent(){
+  document.querySelectorAll('#evseg button').forEach(b=>b.classList.toggle('on',b.dataset.s===evSub));
+  let h='';
+  if(evSub==='schedule'){
+    h='<table>';let day=-1;
+    T.forEach(x=>{const mt=meta(x.i); if(mt.d!==day){day=mt.d;h+=`<tr><td colspan="5" class="day">${DAYS[day]} · ${roundOf(x.i)}${day<2?'':''}</td></tr>`}
+      const m=x.m,w=m&&m.done?m.winner:-1;
+      h+=`<tr class="click" data-m="${x.i}"><td>${mt.t}</td><td class="cc">${mt.court}</td><td><span class="${w===0?'w':''}">${nm(x.p[0])}</span> <span class="cc">vs</span> <span class="${w===1?'w':''}">${nm(x.p[1])}</span></td><td>${m?scoreStr(m):''}</td><td>${pillOf(x)}</td></tr>`});
+    h+='</table>';
+  }else if(evSub==='field'){
+    const ids=DRAW.flat().sort((a,b)=>(seedOf(a)||99)-(seedOf(b)||99)||P[a].n.localeCompare(P[b].n));
+    h='<table><tr><th>Seed</th><th>Player</th><th>Country</th><th>Born</th><th>Big titles</th><th>First-round opponent</th><th>Status</th></tr>';
+    ids.forEach(id=>{const d=DRAW.find(p=>p.includes(id)),opp=d[0]===id?d[1]:d[0];
+      let st='In the draw',out=T.find(x=>x.m&&x.m.done&&x.m.p[1-x.m.winner]===id);
+      if(out)st='Out in '+roundOf(out.i).toLowerCase(); else if(T[14].m&&T[14].m.done)st='Champion';
+      h+=`<tr class="click" data-p="${id}"><td>${seedOf(id)||'–'}</td><td class="w">${P[id].full}</td><td class="cc">${cty(P[id].c)}</td><td>${P[id].y}</td><td>${P[id].total}</td><td>${nm(opp)}</td><td>${st}</td></tr>`});
+    h+='</table>';
+  }else{
+    const cols=[[0,8,'Round of 16'],[8,12,'Quarterfinals'],[12,14,'Semifinals'],[14,15,'Final']];
+    h='<div class="bracket">'+cols.map(([a,b,t])=>`<div class="bcol"><h2>${t}</h2>`+T.slice(a,b).map(x=>{
+      const m=x.m,w=m&&m.done?m.winner:-1,line=k=>`<div class="${w===k?'w':''}"><span>${nm(x.p[k])}</span><span>${m?m.sets.map(s=>s[k]).join(' '):''}</span></div>`;
+      return `<button class="bm ${statusOf(x)}" data-m="${x.i}" aria-label="Open match">${line(0)}${line(1)}</button>`}).join('')+'</div>').join('')+'</div>';
+  }
+  $('#evbody').innerHTML=h;
+}
+$('#evseg').onclick=e=>{const b=e.target.closest('button');if(b){evSub=b.dataset.s;renderEvent()}};
+$('#evbody').onclick=e=>{const m=e.target.closest('[data-m]'),p=e.target.closest('[data-p]');
+  if(m){openDemoMatch(+m.dataset.m)}
+  else if(p){openPlayer(p.dataset.p)}
+  else if(e.target.closest('[data-ch]')){openChart(CHD[ev.ce.id].ms[+e.target.closest('[data-ch]').dataset.ch])}
+  else{const pn=e.target.closest('[data-pn]'),mp=e.target.closest('[data-map]');if(pn){const pl=PL.find(x=>same(x.full,pn.dataset.pn));if(pl)openPlayer(pl.id)}else if(mp){msel=TOUR[+mp.dataset.map];mcat='all';go('map')}}};
+
+/* ---------- live tab ---------- */
+const STATS=[
+ ['Aces',s=>s.ace,null,'A legal serve the receiver does not touch. The server wins the point outright.'],
+ ['Double faults',s=>s.df,null,'A fault is a serve that misses the service box or hits the net and lands out. Two faults in a row on the same point is a double fault, and the receiver wins the point.'],
+ ['First serve in',s=>pct(s.f1in,s.f1),s=>s.f1?s.f1in/s.f1:0,'Share of service points where the first serve landed in. A higher figure means fewer risky second serves.'],
+ ['1st serve points won',s=>pct(s.f1w,s.f1in),s=>s.f1in?s.f1w/s.f1in:0,'Of the points played after a first serve went in, the share the server won.'],
+ ['2nd serve points won',s=>pct(s.s2w,s.s2),s=>s.s2?s.s2w/s.s2:0,'Of the points that needed a second serve (double faults included), the share the server won.'],
+ ['Break points converted',s=>s.bpw+'/'+s.bp,s=>s.bp?s.bpw/s.bp:0,'A break point is a point where the receiver is one point from winning the server’s game. Converted means the receiver won it and broke serve.'],
+ ['Winners',s=>s.win+s.ace,null,'Shots that land in and the opponent cannot reach or return. Aces count as winners.'],
+ ['Unforced errors',s=>s.ue+s.df,null,'Points lost through a player’s own mistake on a shot they were in position to make. Double faults count here.'],
+ ['Receiving points won',s=>s.rw,null,'Points won while the opponent was serving.'],
+ ['Total points won',s=>s.pts,null,'All points won in the match, serving and receiving.']
+];
+const TERMS=[['Fault','A serve that does not land in the correct service box, or a foot fault. After one fault the server gets a second serve.'],
+ ['Deuce','40–40. From deuce a player must win two points in a row to take the game.'],
+ ['Advantage (AD)','The point after deuce. Win the next point and you win the game; lose it and the score returns to deuce.'],
+ ['Break','Winning a game while the opponent is serving.'],
+ ['Tiebreak','Played at 6–6 in a set. First to 7 points with a 2-point lead wins the set 7–6. The small number shows the loser’s tiebreak points.'],
+ ['Set / match','First to 6 games with a 2-game lead wins a set. This event is best of three sets.']];
+const pct=(a,b)=>b?Math.round(100*a/b)+'%':'–';
+function renderLive(){
+  document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.v===speed));
+  ['speed','finish','restart'].forEach(id=>{$('#'+id).hidden=!!am||(lv.kind!=='demo'&&!cm)});renderPicker();
+  if(cm)return renderChart();
+  $('#finish').textContent='Finish this match';$('#restart').textContent='Restart event';$('#court').dataset.sf='';
+  $('#courtnote').textContent='Simulated ball tracking for the demo match.';
+  if(am){$('#courtcard').hidden=true;return renderArch()}
+  if(lv.kind!=='demo'){$('#courtcard').hidden=true;$('#board').innerHTML='<div class="card pad sub">Loading the matches of this event…</div>';$('#stats').innerHTML='';$('#feed').innerHTML='';return}
+  const x=T[view],m=x.m,mt=meta(x.i);
+  $('#courtcard').hidden=!(m&&!m.done);
+  $('#finish').hidden=!(m&&!m.done);
+  if(!m){
+    $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${roundOf(x.i)} · ${mt.court}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">Scheduled</span><span class="clock">${DAYS[mt.d]} · ${mt.t}</span></div>
+      <div class="scroll"><table><tr><td class="nm">${nm(x.p[0])}</td></tr><tr><td class="nm">${nm(x.p[1])}</td></tr></table></div></div>`;
+    $('#stats').innerHTML='<div class="pad sub">Statistics appear when the match starts.</div>';$('#feed').innerHTML='<li>No points played yet.</li>';renderTerms();return}
+  const g=gameScore(m),n=m.sets.length;
+  const rowp=k=>`<tr><td class="srv">${!m.done&&m.srv===k?'<span class="ball" title="Serving"></span>':''}</td><td class="nm">${P[m.p[k]].full}${seedOf(m.p[k])?`<small>[${seedOf(m.p[k])}]</small>`:''}${P[m.p[k]].c?`<small>${cty(P[m.p[k]].c)}</small>`:''}</td>`+
+    m.sets.map((s,i)=>{const fin=i<m.setTimes.length,won=fin&&s[k]>s[1-k];return `<td class="set ${won||!fin?'won':''}">${s[k]}${fin&&m.tbs[i]!=null&&!won?`<sup>${m.tbs[i]}</sup>`:''}</td>`}).join('')+
+    (m.done?'':`<td class="pt">${g[k]}</td>`)+'</tr>';
+  const durRow=`<tr class="dur"><td></td><td>Set time</td>`+m.sets.map((s,i)=>`<td>${i<m.setTimes.length?dur(m.setTimes[i]):clk(m.clock-m.setStart)}</td>`).join('')+(m.done?'':'<td></td>')+'</tr>';
+  $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${roundOf(x.i)} · ${mt.court}</span>${m.done?'<span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">Final</span>':'<span class="pill live"><span class="dot"></span>Live</span>'}
+    <span class="clock">${m.done?'':`<span>Set ${n} <b>${clk(m.clock-m.setStart)}</b></span>`}<span>Match <b>${clk(m.clock)}</b></span></span></div>
+    <div class="scroll"><table>${rowp(0)}${rowp(1)}${durRow}</table></div>
+    ${m.done?`<div class="sbfoot">${P[m.p[m.winner]].full} wins ${scoreStr(m).replace(/  /g,', ')} · Total match time ${dur(m.clock)}</div>`:m.tb?'<div class="sbfoot">Tiebreak</div>':''}</div>`;
+  const a=m.st[0],b=m.st[1];
+  $('#stats').innerHTML=`<div class="heads"><span>${P[m.p[0]].n}</span><span>${P[m.p[1]].n}</span></div>`+STATS.map((s,i)=>{
+    let va=s[2]?s[2](a):parseFloat(s[1](a))||0,vb=s[2]?s[2](b):parseFloat(s[1](b))||0; const tot=va+vb||1;
+    return `<div class="stat"><div class="top"><b>${s[1](a)}</b><span class="lab">${s[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${s[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${s[1](b)}</b></div>
+    <div class="bar"><i style="flex:${va/tot||0.001}"></i><i style="flex:${vb/tot||0.001}"></i></div>${openStat===i?`<div class="def">${s[3]}</div>`:''}</div>`}).join('');
+  $('#feed').innerHTML=m.feed.length?m.feed.map(f=>`<li><time>${clk(f.c)}</time><span>${f.txt}${f.sc?` <span class="cc">${f.sc}</span>`:''}${f.tag?` · <em>${f.tag}</em>`:''}</span></li>`).join(''):'<li>Waiting for the first point.</li>';
+  renderTerms();
+}
+function renderTerms(){
+  $('#terms').innerHTML=TERMS.map((t,i)=>`<span>${t[0]}<button class="ib ${openTerm===i?'on':''}" data-t="${i}" aria-label="What does ${t[0]} mean?" aria-expanded="${openTerm===i}">i</button></span>`).join('');
+  const d=$('#termdef');d.hidden=openTerm===null;if(openTerm!==null)d.innerHTML=`<div class="def"><b>${TERMS[openTerm][0]}.</b> ${TERMS[openTerm][1]}</div>`;
+}
+$('#stats').onclick=e=>{const b=e.target.closest('.ib');if(b){const i=+b.dataset.i;openStat=openStat===i?null:i;renderLive()}};
+$('#terms').onclick=e=>{const b=e.target.closest('.ib');if(b){const i=+b.dataset.t;openTerm=openTerm===i?null:i;renderTerms()}};
+$('#speed').onclick=e=>{const b=e.target.closest('button');if(b){speed=+b.dataset.v;renderLive();tick()}};
+$('#finish').onclick=()=>{const x=T[view];if(x.m&&!x.m.done&&view===cur){while(cur===view)step();renderLive()}};
+$('#restart').onclick=()=>{initEvent();renderPicker();renderLive();tick()};
+
+/* ---------- players tab ---------- */
+let pf='all';
+function renderPlayers(){
+  document.querySelectorAll('#pfilter button').forEach(b=>b.classList.toggle('on',b.dataset.f===pf));
+  const q=plain($('#q').value.trim());
+  const list=PL.filter(p=>(pf==='all'||(pf==='top'&&p.rank)||(pf==='big'&&p.total)||(pf==='retired'&&p.ret))&&(!q||plain(p.full).includes(q)||p.c.toLowerCase().includes(q))).sort((a,b)=>(a.rank||999)-(b.rank||999)||b.total-a.total);
+  let h='<table><tr><th>Rank</th><th>Player</th><th>Country</th><th>Age</th><th>Big titles</th><th>Grand Slams</th><th>Masters 1000</th><th>Weeks at No. 1</th><th>Status</th></tr>';
+  list.forEach(p=>{h+=`<tr class="click" data-p="${p.id}" tabindex="0"><td class="w">${p.rank||'–'}</td><td><span class="who">${avatar(p.full)}<span class="w">${p.full}</span></span></td><td class="cc">${cty(p.c)}</td><td>${p.age||'b. '+p.y}</td><td>${p.total||'–'}</td><td>${p.slams||'–'}</td><td>${p.masters||'–'}</td><td>${p.w||'–'}</td><td>${p.ret?'Retired':'Active'}</td></tr>`});
+  if(!list.length)h+='<tr><td colspan="9">No players match that search.</td></tr>';
+  $('#ptable').innerHTML=h+'</table>';
+}
+$('#q').oninput=renderPlayers;
+$('#pfilter').onclick=e=>{const b=e.target.closest('button');if(b){pf=b.dataset.f;renderPlayers()}};
+$('#ptable').onclick=e=>{const r=e.target.closest('[data-p]');if(r)openPlayer(r.dataset.p)};
+$('#ptable').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('[data-p]');if(r)openPlayer(r.dataset.p)}};
+/* ---------- rankings + ranking history ---------- */
+const RK_DATE='9 November 2026';
+const RK=[[1,'Alexander Zverev','GER',9550,0],[2,'Jannik Sinner','ITA',9450,0],[3,'Carlos Alcaraz','ESP',7100,0],[4,'Ben Shelton','USA',5170,0],[5,'Daniil Medvedev','',3820,0],[6,'Flavio Cobolli','ITA',3680,0],[7,'Arthur Fils','FRA',3625,0],[8,'Frances Tiafoe','USA',3390,0],[9,'Alex de Minaur','AUS',3370,0],[10,'Taylor Fritz','USA',3285,2],[11,'Rafael Jodar','ESP',3234,-1],[12,'Novak Djokovic','SRB',2940,-1],[13,'Tommy Paul','USA',2925,1],[14,'Felix Auger-Aliassime','CAN',2875,-1],[15,'Jiri Lehecka','CZE',2540,0],[16,'Jakub Mensik','CZE',2500,0],[17,'Alejandro Davidovich Fokina','ESP',2500,0],[18,'Casper Ruud','NOR',2435,5],[19,'Brandon Nakashima','USA',2360,-1],[20,'Francisco Cerundolo','ARG',2220,null],
+[21,'Luciano Darderi','ITA',2160,null],
+[22,'Learner Tien','USA',2145,null],
+[23,'Andrey Rublev','',2085,null],
+[24,'Karen Khachanov','',1980,null],
+[25,'Lorenzo Musetti','ITA',1895,null],
+[26,'Alexander Bublik','KAZ',1885,null],
+[27,'Valentin Vacherot','MON',1790,null],
+[28,'Alexander Blockx','BEL',1640,null],
+[29,'Tomas Martin Etcheverry','ARG',1625,null],
+[30,'Hubert Hurkacz','POL',1625,null],
+[31,'Alejandro Tabilo','CHI',1525,null],
+[32,'Ignacio Buse','PER',1520,null],
+[33,'Arthur Fery','GBR',1510,null],
+[34,'Luca Van Assche','FRA',1492,null],
+[35,'Alex Michelsen','USA',1460,null],
+[36,'Stefanos Tsitsipas','GRE',1430,null],
+[37,'Jan-Lennard Struff','GER',1358,null],
+[38,'Matteo Arnaldi','ITA',1321,null],
+[39,'Ugo Humbert','FRA',1320,null],
+[40,'Botic van de Zandschulp','NED',1280,null],
+[41,'Nuno Borges','POR',1241,null],
+[42,'Daniel Merida','ESP',1237,null],
+[43,'Matteo Berrettini','ITA',1223,null],
+[44,'Zizou Bergs','BEL',1220,null],
+[45,'Quentin Halys','FRA',1214,null],
+[46,'Joao Fonseca','BRA',1200,null],
+[47,'Arthur Gea','FRA',1146,null],
+[48,'Mariano Navone','ARG',1099,null],
+[49,'Tallon Griekspoor','NED',1075,null],
+[50,'Denis Shapovalov','CAN',1055,null],
+[51,'Thiago Agustin Tirante','ARG',1042,null],
+[52,'Sebastian Baez','ARG',1040,null],
+[53,'Cameron Norrie','GBR',1030,null],
+[54,'Juan Manuel Cerundolo','ARG',1015,null],
+[55,'Raphael Collignon','BEL',968,null],
+[56,'Adolfo Daniel Vallejo','PAR',959,null],
+[57,'Jaime Faria','POR',941,null],
+[58,'Arthur Rinderknech','FRA',920,null],
+[59,'Rinky Hijikata','AUS',909,null],
+[60,'Tomas Machac','CZE',899,null],
+[61,'Adrian Mannarino','FRA',898,null],
+[62,'Mattia Bellucci','ITA',879,null],
+[63,'Fabian Marozsan','HUN',875,null],
+[64,'Miomir Kecmanovic','SRB',859,null],
+[65,'Camilo Ugo Carabelli','ARG',845,null],
+[66,'Facundo Diaz Acosta','ARG',836,null],
+[67,'Yannick Hanfmann','GER',835,null],
+[68,'Ethan Quinn','USA',831,null],
+[69,'Vit Kopriva','CZE',828,null],
+[70,'Jaume Munar','ESP',825,null],
+[71,'Martin Landaluce','ESP',822,null],
+[72,'Alex Molcan','SVK',820,null],
+[73,'Daniel Altmaier','GER',812,null],
+[74,'Roman Safiullin','',807,null],
+[75,'Terence Atmane','FRA',787,null],
+[76,'James Duckworth','AUS',774,null],
+[77,'Pablo Carreno Busta','ESP',773,null],
+[78,'Zachary Svajda','USA',759,null],
+[79,'Roman Andres Burruchaga','ARG',752,null],
+[80,'Hamad Medjedovic','SRB',751,null],
+[81,'Titouan Droguet','FRA',732,null],
+[82,'Kamil Majchrzak','POL',725,null],
+[83,'Aleksandar Kovacevic','USA',693,null],
+[84,'Chak Lam Coleman Wong','HKG',692,null],
+[85,'Kyrian Jacquet','FRA',684,null],
+[86,'Nikoloz Basilashvili','GEO',681,null],
+[87,'Jacob Fearnley','GBR',671,null],
+[88,'Marco Trungelliti','ARG',670,null],
+[89,'Dino Prizmic','CRO',663,null],
+[90,'Damir Dzumhur','BIH',661,null],
+[91,'Benjamin Bonzi','FRA',657,null],
+[92,'Bu Yunchaokete','CHN',646,null],
+[93,'Jenson Brooksby','USA',638,null],
+[94,'Marcos Giron','USA',638,null],
+[95,'Toby Samuel','GBR',624,null],
+[96,'Adam Walton','AUS',619,null],
+[97,'Marin Cilic','CRO',613,null],
+[98,'Thiago Seyboth Wild','BRA',609,null],
+[99,'Zsombor Piros','HUN',604,null],
+[100,'Michael Zheng','USA',594,null]];
+// Season-end singles rankings [first year, rank, rank, ...], taken from each player's match records in the TML database
+// (first January match of the next season, otherwise the last match of the season). Built by tools/build_archive.py.
+const YE={"fed":[1998,396,64,30,13,6,2,1,1,1,1,2,1,2,3,2,7,2,3,17,2,3,3,5,16],"waw":[2003,171,168,54,30,36,16,21,21,17,17,8,4,4,4,8,69,15,20,82,148,56,156,157],"nad":[2002,261,49,51,2,2,2,1,2,1,2,4,1,3,5,9,1,2,1,2,6,2,672,154],"djo":[2004,188,76,16,3,3,3,3,1,1,2,1,1,2,14,1,2,1,1,5,1,4,4],"mur":[2003,579,477,64,17,12,4,4,5,4,3,4,6,2,1,16,240,126,115,134,49,42,129],"cil":[2005,587,171,102,27,14,14,18,15,41,9,13,6,6,7,39,41,30,17,674,196,70],"dim":[2008,481,288,105,78,55,22,11,28,17,3,10,20,20,28,28,14,9,47],"pcb":[2010,354,133,164,64,49,67,30,10,24,30,15,20,15,195,199,92],"nor":[2014,976,1076,276,114,93,53,74,12,14,18,57,28],"med":[2015,329,99,65,17,5,4,2,7,3,5,13],"kha":[2013,442,351,152,53,48,18,17,19,29,20,15,21,17],"cor":[2013,367,95,44,48,48,12,28,24,73,26,37,92,105],"hur":[2015,1187,381,238,85,37,35,9,10,9,14,83],"zve":[2013,809,135,83,24,4,4,7,7,3,12,7,2,3],"rub":[2013,1246,495,185,152,39,68,23,8,6,8,5,8,16],"fri":[2015,155,93,104,47,32,29,23,9,10,4,6],"tsi":[2015,574,210,91,15,6,6,4,4,6,11,36],"ruu":[2016,225,139,117,54,27,8,3,11,7,12],"vac":[2021,1569,290,280,140,31],"pop":[2017,621,174,95,109,61,120,40,24,50],"dav":[2017,471,234,85,63,51,32,26,62,14],"sin":[2018,762,78,44,10,15,4,1,2],"dra":[2019,334,292,265,42,62,18,10],"she":[2021,678,92,17,21,8],"run":[2019,1019,550,103,11,8,13,11],"alc":[2019,490,138,31,1,2,3,1],"fil":[2021,613,251,36,20,40],"men":[2022,408,167,48,18],"flavio-cobolli":[2020,914,205,171,100,31,22],"frances-tiafoe":[2014,1139,182,108,79,39,47,62,38,19,16,17,30],"alex-de-minaur":[2016,351,208,31,18,23,34,24,12,9,7],"rafael-jodar":[2024,870,165],"tommy-paul":[2015,264,229,152,215,90,52,43,35,14,12,20],"felix-auger-aliassime":[2015,1237,779,154,109,21,21,11,6,27,19,5],"jiri-lehecka":[2019,536,355,141,81,31,31,19],"brandon-nakashima":[2019,364,170,68,47,134,37,33],"francisco-cerundolo":[2018,571,570,159,127,30,21,31,20],"luciano-darderi":[2020,1477,341,177,124,43,24],"learner-tien":[2022,1042,473,122,28],"lorenzo-musetti":[2019,451,129,59,23,27,17,7],"alexander-bublik":[2016,205,114,248,55,49,35,37,31,33,11],"alexander-blockx":[2023,412,203,115],"tomas-martin-etcheverry":[2020,256,130,80,30,39,57],"alejandro-tabilo":[2018,795,207,167,139,102,82,22,81],"ignacio-buse":[2022,1476,471,236,110],"arthur-fery":[2022,473,272,247,186],"luca-van-assche":[2021,680,139,90,128,168],"alex-michelsen":[2023,97,41,37],"jan-lennard-struff":[2010,384,234,180,106,58,107,63,53,52,35,37,51,150,25,42,82],"matteo-arnaldi":[2019,1744,null,363,134,44,38,65],"ugo-humbert":[2017,368,100,56,34,35,108,20,18,36],"botic-van-de-zandschulp":[2016,722,336,511,193,153,57,35,50,84,75],"nuno-borges":[2020,398,194,111,66,33,45],"daniel-merida":[2022,517,504,296,164],"matteo-berrettini":[2015,530,680,135,52,8,10,7,16,36,35,56],"zizou-bergs":[2018,408,null,528,192,129,129,61,42],"quentin-halys":[2014,643,197,153,134,137,213,206,151,64,100,74,91],"joao-fonseca":[2022,1363,727,145,32],"arthur-gea":[2023,848,383,241],"mariano-navone":[2021,561,243,125,45,72],"tallon-griekspoor":[2015,798,396,292,233,175,155,65,95,23,40,26],"denis-shapovalov":[2016,247,51,27,15,12,14,18,116,56,23],"thiago-agustin-tirante":[2020,376,240,225,121,123,103],"sebastian-baez":[2017,1765,null,null,316,99,43,28,28,45],"juan-manuel-cerundolo":[2020,349,90,151,120,139,87],"raphael-collignon":[2022,280,217,122,84],"adolfo-daniel-vallejo":[2022,988,472,227,146],"jaime-faria":[2023,411,144,151],"arthur-rinderknech":[2018,421,323,178,58,44,96,60,29],"rinky-hijikata":[2019,1744,null,375,164,71,76,111],"tomas-machac":[2019,536,197,143,97,78,25,35],"adrian-mannarino":[2006,496,430,129,89,83,87,185,61,44,44,60,28,46,43,34,71,46,22,54,68],"mattia-bellucci":[2022,152,177,102,76],"fabian-marozsan":[2021,359,173,64,59,53],"miomir-kecmanovic":[2017,207,161,62,42,78,29,54,53,51],"camilo-ugo-carabelli":[2017,914,368,454,351,213,126,140,94,49],"facundo-diaz-acosta":[2018,1786,571,471,338,191,95,67,210],"yannick-hanfmann":[2013,1344,null,null,319,119,129,170,95,126,128,51,95,102],"ethan-quinn":[2022,485,343,240,78],"vit-kopriva":[2017,429,null,617,299,198,152,132,131,101],"jaume-munar":[2015,443,425,184,76,88,108,77,58,82,65,33],"martin-landaluce":[2023,442,156,134],"alex-molcan":[2015,1552,675,462,362,283,313,88,50,119,344,199],"daniel-altmaier":[2017,240,373,276,125,84,92,56,93,44],"roman-safiullin":[2015,884,590,473,335,249,180,167,88,39,60,94],"terence-atmane":[2022,299,144,154,64],"james-duckworth":[2011,275,223,133,125,120,107,107,257,96,104,49,155,116,94,86],"zachary-svajda":[2019,914,954,483,257,142,161,143],"roman-andres-burruchaga":[2021,577,274,181,136,107],"hamad-medjedovic":[2021,697,255,110,112,96],"titouan-droguet":[2021,496,286,161,174,152],"kamil-majchrzak":[2013,1256,442,275,271,197,221,101,106,117,82,null,122,59],"aleksandar-kovacevic":[2019,560,509,353,174,101,97,58],"chak-lam-coleman-wong":[2022,1032,253,163,150],"kyrian-jacquet":[2020,624,309,473,214,272,136],"nikoloz-basilashvili":[2008,1231,734,null,604,316,327,171,117,94,59,22,26,40,22,91,138,206,109],"jacob-fearnley":[2022,1194,null,94,77],"marco-trungelliti":[2009,610,420,325,211,263,283,210,147,219,123,210,247,199,223,224,139,135],"dino-prizmic":[2022,475,178,301,127],"damir-dzumhur":[2010,1112,339,210,188,108,82,77,30,52,92,115,158,186,154,106,65],"benjamin-bonzi":[2017,187,308,294,164,64,60,73,124,106],"bu-yunchaokete":[2022,282,170,67,120],"jenson-brooksby":[2018,1572,394,null,70,48,39,null,48],"marcos-giron":[2013,553,454,426,579,272,360,107,91,66,61,60,45,64],"toby-samuel":[2023,417,null,261],"adam-walton":[2021,1205,434,176,90,77],"thiago-seyboth-wild":[2017,637,436,360,118,131,418,79,79,216],"zsombor-piros":[2017,631,363,361,null,288,162,126,248,170],"michael-zheng":[2023,558,998,182]};
+function series(id){const a=YE[id]||[],out=a.slice(1).map((r,i)=>[a[0]+i,r]).filter(d=>d[1]);const c=RK.find(r=>r[1]===P[id].full);if(c)out.push([2026,c[0]]);return out}
+function rankChart(pts){
+  if(pts.length<2)return '<div class="pad sub">Not enough ranking history to chart.</div>';
+  const n=pts.length,W=Math.max(680,n*38+64),H=300,l=46,r=22,t=28,b=34,w=W-l-r,h=H-t-b;
+  const mx=Math.max(...pts.map(d=>d[1])),top=mx<=10?10:mx<=20?20:mx<=50?50:mx<=100?100:Math.ceil(mx/100)*100;
+  const X=i=>l+i*w/(n-1),Y=v=>t+(v-1)/(top-1)*h;
+  let s=`<svg class="rk" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Singles ranking by season, No. 1 at the top">`;
+  [1,top/4,top/2,top*3/4,top].map(Math.round).forEach(v=>{s+=`<line class="grid" x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${l-8}" y="${Y(v)+4}" text-anchor="end">${v}</text>`});
+  s+=`<path class="ln" d="${pts.map((d,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(d[1]).toFixed(1)).join('')}"/>`;
+  pts.forEach((d,i)=>{const x=X(i).toFixed(1),y=Y(d[1]);
+    s+=`<circle class="pt${i===n-1?' last':''}" cx="${x}" cy="${y.toFixed(1)}" r="4.5"><title>${d[0]}: No. ${d[1]}</title></circle><text class="val" x="${x}" y="${(y-10).toFixed(1)}" text-anchor="middle">${d[1]}</text><text class="ax" x="${x}" y="${H-10}" text-anchor="middle">${d[0]}</text>`});
+  return s+'</svg>';
+}
+const RKA=[29,25,23,24,30,24,22,28,27,29,20,39,29,26,25,21,27,27,25,28,24,20,29,30,24,29,27,21,27,29,29,22,24,22,22,28,36,25,28,31,29,22,30,27,30,20,21,25,30,27,25,25,31,24,24,22,23,31,25,26,38,25,27,27,27,25,34,22,29,29,20,28,28,29,24,34,35,23,24,23,25,30,28,22,25,34,25,36,21,34,30,24,26,33,24,27,38,26,27,22];
+// Top 7 only, from the ATP rankings page of 9 Nov 2026: [points change, tournaments played, points dropping, next best]
+const RKX=[[0,20,200,10],[0,17,1500,0],[1000,18,1000,0],[640,22,0,10],[-40,24,0,0],[-10,25,0,0],[100,20,0,0]];
+let rk={top:100,cty:'',sort:'rank',dir:1};
+const mvTag=v=>v>0?`<sup class="mv up">▲${v}</sup>`:v<0?`<sup class="mv dn">▼${-v}</sup>`:'';
+function renderRankings(){
+  const cs=[...new Set(RK.map(r=>r[2]).filter(Boolean))].sort();
+  $('#rcty').innerHTML='<option value="">All countries</option>'+cs.map(c=>`<option${c===rk.cty?' selected':''}>${c}</option>`).join('');
+  $('#rtop').value=rk.top;
+  const key={rank:r=>r[0],player:r=>r[1],age:r=>RKA[r[0]-1],points:r=>r[3]}[rk.sort];
+  const rows=RK.filter(r=>r[0]<=rk.top&&(!rk.cty||r[2]===rk.cty)).sort((x,y)=>{const a=key(x),b=key(y);return (a<b?-1:a>b?1:0)*rk.dir});
+  const th=(k,l)=>`<th data-sort="${k}" tabindex="0" class="srt">${l} ${rk.sort===k?(rk.dir>0?'▲':'▼'):'<span class="cc">▵</span>'}</th>`;
+  const na='<span class="cc">n/a</span>',z=v=>v?v.toLocaleString('en-US'):'–';
+  let h=`<table><tr>${th('rank','Rank')}${th('player','Player')}${th('age','Age')}${th('points','Official points')}<th>+/-</th><th>Tourn played</th><th>Dropping</th><th>Next best</th></tr>`;
+  rows.forEach(r=>{const pl=PL.find(p=>p.full===r[1]),x=RKX[r[0]-1];
+    const chg=x?(x[0]>0?`<span class="up">+${x[0]}</span>`:x[0]<0?`<span class="dn">${x[0]}</span>`:'–'):na;
+    h+=`<tr${pl?` class="click" data-p="${pl.id}" tabindex="0"`:''}><td class="w">${r[0]}${mvTag(r[4])}</td><td><span class="who">${avatar(r[1])}<span class="flag">${fl(r[2])}</span><span class="w">${r[1]}</span></span></td><td>${RKA[r[0]-1]}</td><td class="w">${r[3].toLocaleString('en-US')}</td><td>${chg}</td><td>${x?x[1]:na}</td><td>${x?z(x[2]):na}</td><td>${x?z(x[3]):na}</td></tr>`});
+  if(!rows.length)h+='<tr><td colspan="8">No ranked player from that country in this range.</td></tr>';
+  $('#rtable').innerHTML=h+'</table>';
+}
+$('#rtop').onchange=e=>{rk.top=+e.target.value;renderRankings()};
+$('#rcty').onchange=e=>{rk.cty=e.target.value;renderRankings()};
+$('#rtable').addEventListener('click',e=>{const t=e.target.closest('[data-sort]');if(t){const k=t.dataset.sort;rk.dir=rk.sort===k?-rk.dir:1;rk.sort=k;renderRankings()}});
+$('#rtable').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('[data-p]');if(r)openPlayer(r.dataset.p)}};
+
+/* ---------- player profile ---------- */
+const plain=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+let prof={id:null,sec:'overview',range:'all'};
+function openPlayer(id){
+  prof={id,sec:'overview',range:'all'};
+  $('#plist').hidden=true;$('#pdetail').hidden=false;
+  if(tab!=='players'){show('players',true);try{history.replaceState(null,'','#players')}catch(e){}}
+  renderProfile();window.scrollTo(0,0);
+}
+function renderProfile(){
+  const id=prof.id,p=P[id],t=p.t,ach=[];
+  if(p.strike===15)ach.push('Has won every one of the 15 big titles at least once');
+  if(t[0]&&t[1]&&t[2]&&t[3])ach.push(t[5]?'Career Golden Slam: all four majors plus Olympic gold':'Career Grand Slam: all four majors');
+  if(p.slams)ach.push(p.slams+' Grand Slam title'+(p.slams>1?'s':''));
+  if(t.slice(6).every(v=>v))ach.push('Career Golden Masters: all nine current Masters 1000 events');
+  if(t[4])ach.push('ATP Finals champion'+(t[4]>1?' × '+t[4]:''));
+  if(t[5])ach.push('Olympic singles gold'+(t[5]>1?' × '+t[5]:''));
+  if(p.w)ach.push('World No. 1 for '+p.w+' week'+(p.w>1?'s':'')+(id==='zve'?' (current No. 1 since 2 Nov 2026, streak ongoing)':''));
+  if(p.ye)ach.push('Year-end No. 1'+(p.ye>1?' × '+p.ye:'')+(id==='zve'?' (2026, already clinched)':''));
+  const mx=Math.max(...t),mi=t.indexOf(mx); if(mx>=3)ach.push('Most successful event: '+COLN[mi]+' ('+mx+' titles)');
+  if(p.x)ach.push('Hamburg Masters × '+p.x+' (former Masters event)');
+  if(p.total===1)ach.push('Big-title winner: '+COLN[t.findIndex(v=>v)]);
+  const surf={hard:0,clay:0,grass:0,indoor:0};t.forEach((v,i)=>{if(SURF[i]!=='gold')surf[SURF[i]]+=v});if(p.x)surf.clay+=p.x;
+  const cur=RK.find(r=>r[1]===p.full),all=series(id),pts=prof.range==='5'?all.slice(-5):all;
+  const best=all.length?all.reduce((a,b)=>b[1]<a[1]?b:a):null;
+  const won=TOUR.filter(e=>e[9]&&plain(e[9])===plain(p.full));
+  const acts=T.filter(x=>x.p.includes(id));
+  const act=acts.length?'<table><tr><th>Round</th><th>Opponent</th><th>Result</th><th>Score</th></tr>'+acts.map(x=>{const k=x.p.indexOf(id),m=x.m;
+    return `<tr class="click" data-m="${x.i}"><td>${roundOf(x.i)}</td><td>${nm(x.p[1-k])}</td><td>${m?(m.done?(m.winner===k?'Won':'Lost'):'In progress'):'Scheduled · '+DAYS[meta(x.i).d]}</td><td>${m?scoreStr(m):''}</td></tr>`}).join('')+'</table>'
+    :'<div class="pad sub">Not in the Harbor Indoor Open field.</div>';
+  const S=prof.sec,on=(...a)=>a.includes(S)?'':' hidden';
+  const mv=cur?(cur[4]>0?`<span class="up">▲ ${cur[4]}</span>`:cur[4]<0?`<span class="dn">▼ ${-cur[4]}</span>`:'–'):'';
+  $('#pdetail').innerHTML=`<div class="row"><button class="btn" id="back">← All players</button></div>
+   <div class="row">${avatar(p.full,"lg")}<div><h1>${p.full}</h1><p class="sub">${p.c?cty(p.c)+' · ':''}${p.age?'Age '+p.age:'Born '+p.y} · ${p.ret?'Retired':'Active'}${(b=>b?(b[0]?' · '+ftin(b[0]):'')+(b[1]?' · '+(b[1]==='L'?'Left':'Right')+'-handed':'')+(b[3]?' · Turned pro '+b[3]:''):'')(BIO[id])}${seedOf(id)?' · Seed '+seedOf(id)+' at the Harbor Indoor Open':''}</p></div></div>
+   <div class="tiles">${cur?`<div><b>${cur[0]}${mvTag(cur[4])}</b><span>Rank · ${RK_DATE.replace(' 2026','')}</span></div><div><b>${cur[3].toLocaleString('en-US')}</b><span>Points</span></div>`:''}
+     ${best?`<div><b>${best[1]}</b><span>Best season rank (${best[0]})</span></div>`:''}
+     <div><b>${p.total}${p.x?'†':''}</b><span>Big titles</span></div><div><b>${p.slams}</b><span>Grand Slams</span></div><div><b>${p.masters}</b><span>Masters 1000</span></div><div><b>${p.strike}/15</b><span>Strike rate</span></div><div><b>${p.w||'–'}</b><span>Weeks at No. 1</span></div><div><b>${p.ye||'–'}</b><span>Year-end No. 1</span></div></div>
+   <div class="seg" id="psec">${[['overview','Overview'],['titles','Titles'],['activity','Activity'],['ranking','Ranking']].map(s=>`<button data-s="${s[0]}" class="${S===s[0]?'on':''}">${s[1]}</button>`).join('')}</div>
+   <div class="card"${on('overview')}><div class="pad" style="padding-bottom:0"><h2>Achievements</h2></div><ul class="ach">${ach.map(a=>`<li>${a}</li>`).join('')}</ul></div>
+   <div class="card"${on('overview','ranking')}><div class="pad row" style="justify-content:space-between;padding-bottom:0"><h2>Ranking history</h2>
+     <div class="seg" id="prange"><button data-r="all" class="${prof.range==='all'?'on':''}">Career</button><button data-r="5" class="${prof.range==='5'?'on':''}">Last 5 seasons</button></div></div>
+     <div class="scroll pad">${rankChart(pts)}</div>
+     <div class="pad legend" style="padding-top:0">Singles ranking at the end of each season, No. 1 at the top.${cur?' The 2026 point is the ranking of '+RK_DATE+'.':''}</div></div>
+   <div class="card scroll"${on('ranking')}><table><tr><th>Season</th><th>Singles rank</th></tr>${all.slice().reverse().map(d=>`<tr><td>${d[0]}${d[0]===2026?' (9 Nov)':''}</td><td class="w">${d[1]}</td></tr>`).join('')}</table></div>
+   <div class="card"${on('overview','titles')}><div class="pad" style="padding-bottom:0"><h2>Big titles</h2></div><div class="tgrid">${t.map((v,i)=>`<div class="tcell ${v?'s-'+SURF[i]:'zero'}"><span>${COLN[i]}</span><b>${v||'–'}</b></div>`).join('')}</div>
+   <div class="pad legend" style="padding-top:0"><span>By surface:</span><span><i class="s-hard"></i>Hard ${surf.hard}</span><span><i class="s-clay"></i>Clay ${surf.clay}</span><span><i class="s-grass"></i>Grass ${surf.grass}</span><span><i class="s-indoor"></i>Indoor ${surf.indoor}</span>${t[5]?`<span><i class="s-gold"></i>Olympic gold ${t[5]}</span>`:''}${p.x?'<span>† Includes Hamburg Masters, a former Masters event</span>':''}</div></div>
+   <div class="card scroll"${on('titles','activity')}><div class="pad" style="padding-bottom:0"><h2>2026 tour titles</h2></div>${won.length?'<table><tr><th>Dates</th><th>Tournament</th><th>Category</th><th>Surface</th></tr>'+won.map(e=>`<tr><td>${evInfo(e).dates}</td><td class="w">${e[0]}</td><td>${CAT[e[3]][0]}</td><td>${SURFN[e[4]][0]}</td></tr>`).join('')+'</table>':'<div class="pad sub">No tour-level title recorded in 2026.</div>'}</div>
+   <div class="card"${on('activity')}><div class="pad" style="padding-bottom:8px"><h2>Activity by season</h2><p class="sub" style="margin:4px 0 10px">Choose a season to list every tour-level match, the result at each event and the points earned.</p><div class="chips" id="pyears">${Array.from({length:17},(_,i)=>2026-i).map(y=>`<button data-y="${y}" class="${prof.year===y?'on':''}">${y}</button>`).join('')}</div></div><div id="pact"></div></div>
+   <div class="card scroll"${on('activity')}><div class="pad" style="padding-bottom:0"><h2>Harbor Indoor Open (demo event)</h2></div>${act}</div>
+   <div class="row"><button class="btn" id="tocmp">Compare ${p.n} with others</button></div>`;
+  $('#back').onclick=()=>{$('#pdetail').hidden=true;$('#plist').hidden=false;renderPlayers()};
+  $('#pyears').onclick=e=>{const b=e.target.closest('button');if(b){prof.year=+b.dataset.y;renderProfile()}};fillActivity();
+  $('#psec').onclick=e=>{const b=e.target.closest('button');if(b){prof.sec=b.dataset.s;renderProfile()}};
+  $('#prange').onclick=e=>{const b=e.target.closest('button');if(b){prof.range=b.dataset.r;renderProfile()}};
+  $('#tocmp').onclick=()=>{sel.add(id);saveSel();go('compare')};
+  $('#pdetail').querySelectorAll('[data-m]').forEach(r=>r.onclick=()=>{openDemoMatch(+r.dataset.m)});
+}
+
+/* ---------- compare tab ---------- */
+let sel=new Set(['fed','nad','djo','zve','sin','alc']);
+try{const s=JSON.parse(localStorage.getItem('rl-sel'));if(Array.isArray(s))sel=new Set(s.filter(i=>P[i]))}catch(e){}
+function saveSel(){try{localStorage.setItem('rl-sel',JSON.stringify([...sel]))}catch(e){}}
+finder($('#cq'),$('#csug'),()=>[...sel],id=>{sel.add(id);saveSel();$('#cq').value='';renderCompare();$('#cq').dispatchEvent(new Event('input'))});
+function renderCompare(){
+  const rows=PL.filter(p=>sel.has(p.id));
+  $('#chips').innerHTML=rows.map(p=>`<button data-p="${p.id}" class="on" aria-label="Remove ${p.full}">${p.n} ×</button>`).join('');
+  if(!rows.length){$('#cmp').innerHTML='<div class="pad sub">Search for a player above to start the table.</div>';return}
+  const best=k=>Math.max(...rows.map(p=>p[k]));
+  const bt=best('total'),bs=best('strike'),bw=best('w'),by=best('ye'),multi=rows.length>1;
+  const b=(v,m)=>multi&&v&&v===m?' class="best"':v?'':' class="nil"';
+  let h=`<table class="cmp"><thead><tr><th colspan="3">Big titles</th><th colspan="4">Grand Slam</th><th>ATP</th><th>Oly</th><th colspan="9">ATP Masters 1000</th><th>Total</th><th>Strike rate</th><th colspan="2">ATP ranking</th></tr>
+   <tr><th>Birth year</th><th></th><th style="text-align:left">Players</th>${COLS.map((c,i)=>`<th class="s-${SURF[i]}" title="${COLN[i]}">${c}</th>`).join('')}<th>Big titles</th><th>X/15</th><th>Weeks @ #1</th><th>YE #1</th></tr></thead><tbody>`;
+  rows.forEach(p=>{h+=`<tr><td>${p.y||''}</td><td class="cc">${p.c?cty(p.c):''}</td><td class="nm">${p.n}${p.ret?'*':''}</td>${p.t.map((v,i)=>v?`<td class="s-${SURF[i]}">${v}</td>`:'<td class="nil">–</td>').join('')}
+    <td${b(p.total,bt)}>${p.total}${p.x?'†':''}</td><td${b(p.strike,bs)}>${p.strike}/15</td><td${b(p.w,bw)}>${p.w?p.w+(p.id==='zve'?'‡':''):'–'}</td><td${b(p.ye,by)}>${p.ye?p.ye+(p.id==='zve'?'§':''):'–'}</td></tr>`});
+  $('#cmp').innerHTML=h+'</tbody></table><div class="pad legend" style="padding-top:8px">* Retired</div>';
+}
+$('#chips').onclick=e=>{const b=e.target.closest('button');if(b){sel.delete(b.dataset.p);saveSel();renderCompare()}};
+$('#cnone').onclick=()=>{sel.clear();saveSel();renderCompare()};
+
+/* ---------- tour map ---------- */
+// [name, city, country, category, surface, lat, lng, first day, days, 2026 champion]
+const TOUR=[
+['United Cup','Perth and Sydney','AU','team','H',-33.85,151.07,'2026-01-02',10,'Poland'],
+['Hong Kong Open','Hong Kong','HK','250','H',22.28,114.17,'2026-01-05',7,'Alexander Bublik'],
+['Brisbane International','Brisbane','AU','250','H',-27.47,153.03,'2026-01-05',7,'Daniil Medvedev'],
+['Adelaide International','Adelaide','AU','250','H',-34.93,138.6,'2026-01-12',7,'Tomáš Macháč'],
+['Auckland Open','Auckland','NZ','250','H',-36.85,174.76,'2026-01-12',7,'Jakub Menšík'],
+['Australian Open','Melbourne','AU','gs','H',-37.82,144.98,'2026-01-18',15,'Carlos Alcaraz'],
+['Open Occitanie','Montpellier','FR','250','IH',43.61,3.88,'2026-02-02',7,'Félix Auger-Aliassime'],
+['Dallas Open','Dallas','US','500','IH',32.78,-96.8,'2026-02-09',7,'Ben Shelton'],
+['Rotterdam Open','Rotterdam','NL','500','IH',51.92,4.48,'2026-02-09',7,'Alex de Minaur'],
+['Argentina Open','Buenos Aires','AR','250','C',-34.6,-58.38,'2026-02-09',7,'Francisco Cerúndolo'],
+['Qatar Open','Doha','QA','500','H',25.29,51.53,'2026-02-16',7,'Carlos Alcaraz'],
+['Rio Open','Rio de Janeiro','BR','500','C',-22.91,-43.17,'2026-02-16',7,'Tomás Martín Etcheverry'],
+['Delray Beach Open','Delray Beach','US','250','H',26.46,-80.07,'2026-02-16',7,'Sebastian Korda'],
+['Dubai Tennis Championships','Dubai','AE','500','H',25.2,55.27,'2026-02-23',7,'Daniil Medvedev'],
+['Mexican Open','Acapulco','MX','500','H',16.85,-99.88,'2026-02-23',7,'Flavio Cobolli'],
+['Chile Open','Santiago','CL','250','C',-33.45,-70.67,'2026-02-23',7,'Luciano Darderi'],
+['Indian Wells Open','Indian Wells','US','m','H',33.72,-116.31,'2026-03-04',12,'Jannik Sinner'],
+['Miami Open','Miami Gardens','US','m','H',25.96,-80.24,'2026-03-18',12,'Jannik Sinner'],
+["U.S. Men's Clay Court Championships",'Houston','US','250','C',29.76,-95.37,'2026-03-30',7,'Tommy Paul'],
+['Grand Prix Hassan II','Marrakech','MA','250','C',31.63,-8,'2026-03-30',7,'Rafael Jódar'],
+['Romanian Open','Bucharest','RO','250','C',44.43,26.1,'2026-03-30',7,'Mariano Navone'],
+['Monte-Carlo Masters','Roquebrune-Cap-Martin','FR','m','C',43.75,7.44,'2026-04-05',8,'Jannik Sinner'],
+['Barcelona Open','Barcelona','ES','500','C',41.39,2.12,'2026-04-13',7,'Arthur Fils'],
+['Bavarian International','Munich','DE','500','C',48.14,11.58,'2026-04-13',7,'Ben Shelton'],
+['Madrid Open','Madrid','ES','m','C',40.37,-3.68,'2026-04-22',12,'Jannik Sinner'],
+['Italian Open','Rome','IT','m','C',41.93,12.46,'2026-05-06',12,'Jannik Sinner'],
+['Hamburg Open','Hamburg','DE','500','C',53.57,9.99,'2026-05-18',7,'Ignacio Buse'],
+['Geneva Open','Geneva','CH','250','C',46.2,6.14,'2026-05-18',7,'Learner Tien'],
+['Roland Garros','Paris','FR','gs','C',48.847,2.249,'2026-05-24',15,'Alexander Zverev'],
+['Stuttgart Open','Stuttgart','DE','250','G',48.78,9.18,'2026-06-08',7,'Ben Shelton'],
+['Rosmalen Open',"'s-Hertogenbosch",'NL','250','G',51.69,5.3,'2026-06-08',7,'Kamil Majchrzak'],
+['Halle Open','Halle','DE','500','G',52.06,8.36,'2026-06-15',7,'Frances Tiafoe'],
+["Queen's Club Championships",'London','GB','500','G',51.49,-0.21,'2026-06-15',7,'Francisco Cerúndolo'],
+['Mallorca Championships','Santa Ponsa','ES','250','G',39.51,2.48,'2026-06-22',7,'Alejandro Davidovich Fokina'],
+['Eastbourne Open','Eastbourne','GB','250','G',50.77,0.28,'2026-06-22',7,'Zizou Bergs'],
+['Wimbledon','London','GB','gs','G',51.434,-0.214,'2026-06-29',14,'Jannik Sinner'],
+['Swedish Open','Båstad','SE','250','C',56.43,12.85,'2026-07-13',7,'Andrey Rublev'],
+['Swiss Open','Gstaad','CH','250','C',46.47,7.29,'2026-07-13',7,'Stefanos Tsitsipas'],
+['Croatia Open','Umag','HR','250','C',45.43,13.52,'2026-07-13',7,'Daniel Mérida'],
+['Austrian Open','Kitzbühel','AT','250','C',47.45,12.39,'2026-07-20',7,'Quentin Halys'],
+['Estoril Open','Estoril','PT','250','C',38.71,-9.4,'2026-07-20',7,'Luca Van Assche'],
+['Washington Open','Washington, D.C.','US','500','H',38.95,-77.04,'2026-07-27',7,'Taylor Fritz'],
+['Los Cabos Open','Los Cabos','MX','250','H',22.89,-109.92,'2026-07-27',7,'Arthur Géa'],
+['Canadian Open','Montreal','CA','m','H',45.53,-73.63,'2026-08-02',12,'Ben Shelton'],
+['Cincinnati Open','Mason','US','m','H',39.35,-84.28,'2026-08-13',11,'Arthur Fils'],
+['Winston-Salem Open','Winston-Salem','US','250','H',36.1,-80.24,'2026-08-24',7,'Ignacio Buse'],
+['US Open','New York','US','gs','H',40.75,-73.85,'2026-08-30',15,'Alexander Zverev'],
+['Chengdu Open','Chengdu','CN','250','H',30.57,104.07,'2026-09-21',7,'Alejandro Davidovich Fokina'],
+['Hangzhou Open','Hangzhou','CN','250','H',30.27,120.15,'2026-09-21',7,'Daniil Medvedev'],
+['Laver Cup','London','GB','team','IH',51.503,0.003,'2026-09-25',3,'Team Europe'],
+['China Open','Beijing','CN','500','H',39.99,116.39,'2026-09-28',7,'Novak Djokovic'],
+['Japan Open','Tokyo','JP','500','H',35.64,139.79,'2026-09-28',7,'Carlos Alcaraz'],
+['Shanghai Masters','Shanghai','CN','m','H',31.04,121.36,'2026-10-07',12,'Alejandro Davidovich Fokina'],
+['Almaty Open','Almaty','KZ','250','IH',43.24,76.89,'2026-10-19',7,'Daniil Medvedev'],
+['Grand Prix Auvergne-Rhône-Alpes','Lyon','FR','250','IH',45.76,4.84,'2026-10-19',7,'Lorenzo Musetti'],
+['European Open','Brussels','BE','250','IH',50.85,4.35,'2026-10-19',7,'Tallon Griekspoor'],
+['Swiss Indoors','Basel','CH','500','IH',47.56,7.59,'2026-10-26',7,'Valentin Vacherot'],
+['Vienna Open','Vienna','AT','500','IH',48.2,16.37,'2026-10-26',7,'Carlos Alcaraz'],
+['Paris Masters','Nanterre','FR','m','IH',48.896,2.229,'2026-11-02',7,'Carlos Alcaraz'],
+['Stockholm Open','Stockholm','SE','250','IH',59.33,18.07,'2026-11-08',7,'Taylor Fritz'],
+['ATP Finals','Turin','IT','fin','IH',45.07,7.69,'2026-11-15',8,''],
+['Davis Cup Finals','Bologna','IT','team','IH',44.49,11.34,'2026-11-24',6,''],
+['Next Gen ATP Finals','Reggio Calabria','IT','ng','IH',38.11,15.65,'2026-12-09',5,'']];
+const CAT={gs:['Grand Slam',7,5],fin:['ATP Finals',6,4],m:['Masters 1000',5.5,3],'500':['ATP 500',4.5,2],'250':['ATP 250',3.5,1],team:['Team event',4.5,2],ng:['Next Gen Finals',4.5,2]};
+const SURFN={H:['Hard','--hard'],IH:['Indoor hard','--indoor'],C:['Clay','--clay'],G:['Grass','--grass']};
+const fmtD=(d,y)=>d.toLocaleDateString('en-GB',y?{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}:{day:'numeric',month:'short',timeZone:'UTC'});
+function evInfo(e){const a=new Date(e[7]+'T00:00:00Z'),b=new Date(a.getTime()+(e[8]-1)*864e5),n=Date.now();
+  return{dates:fmtD(a)+' – '+fmtD(b,true),status:n<a.getTime()?'Upcoming':n>b.getTime()+864e5?'Completed':'In progress'}}
+function evCard(e){const i=evInfo(e);
+  return `<b>${e[0]}</b><br>${CAT[e[3]][0]} · ${SURFN[e[4]][0]}<br><span class="flag">${flagOf(e[2])}</span> ${e[1]}<br>${i.dates} · ${e[8]} days<br>${i.status}${e[9]?' · Champion: '+e[9]:''}`}
+let mcat='all',mapObj=null,msel=null;
+function renderMap(){
+  document.querySelectorAll('#mfilter button').forEach(b=>b.classList.toggle('on',b.dataset.c===mcat));
+  const list=TOUR.filter(e=>mcat==='all'||e[3]===mcat);
+  $('#mlist').innerHTML='<table><tr><th>Dates</th><th>Days</th><th>Tournament</th><th>Location</th><th>Category</th><th>Surface</th><th>Status</th><th>2026 champion</th></tr>'+list.slice().sort((a,b)=>b[7].localeCompare(a[7])).map(e=>{const i=evInfo(e);
+    return `<tr class="click" data-e="${TOUR.indexOf(e)}" tabindex="0"><td>${i.dates}</td><td>${e[8]}</td><td class="w">${e[0]}</td><td><span class="flag">${flagOf(e[2])}</span> ${e[1]}</td><td>${CAT[e[3]][0]}</td><td>${SURFN[e[4]][0]}</td><td>${i.status==='In progress'?'<span class="pill live">In progress</span>':i.status}</td><td>${e[9]||'–'}</td></tr>`}).join('')+'</table>';
+  $('#mdetail').innerHTML=msel?evCard(msel):'<span class="sub">Hover or tap a point on the map, or a row in the list, to see the event, its dates and how long it runs.</span>';
+  const el=$('#map');if(mapObj){try{mapObj.destroy()}catch(e){}mapObj=null}el.innerHTML='';
+  if(!window.jsVectorMap){el.innerHTML='<div class="pad sub">The map is unavailable right now. The full list of events is below.</div>';return}
+  const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  const ml=list.slice().sort((a,b)=>CAT[a[3]][2]-CAT[b[3]][2]);
+  mapObj=new jsVectorMap({selector:'#map',map:'world',zoomOnScroll:false,zoomButtons:true,backgroundColor:'transparent',
+    regionStyle:{initial:{fill:v('--land'),stroke:v('--surface'),strokeWidth:0.4},hover:{fill:v('--land'),cursor:'default'}},
+    markerStyle:{hover:{stroke:v('--ink'),strokeWidth:2,cursor:'pointer'}},
+    markers:ml.map(e=>({name:e[0],coords:[e[5],e[6]],style:{fill:v(SURFN[e[4]][1]),r:CAT[e[3]][1],stroke:e[3]==='gs'?v('--gold'):v('--band'),strokeWidth:e[3]==='gs'?3:1}})),
+    onMarkerTooltipShow(ev,tip,i){tip.text(evCard(ml[+i]),true)},
+    onMarkerClick(ev,i){msel=ml[+i];$('#mdetail').innerHTML=evCard(msel)},
+    onRegionTooltipShow(ev){ev.preventDefault()}});
+}
+$('#mfilter').onclick=e=>{const b=e.target.closest('button');if(b){mcat=b.dataset.c;msel=null;renderMap()}};
+$('#mlist').onclick=e=>{const r=e.target.closest('[data-e]');if(r){msel=TOUR[+r.dataset.e];$('#mdetail').innerHTML=evCard(msel);$('#mdetail').scrollIntoView({block:'nearest'})}};
+
+/* ---------- home ---------- */
+function mini(x){const m=x.m,mt=meta(x.i),w=m.done?m.winner:-1;
+  const row=k=>{const id=m.p[k];return `<div class="pl"><span>${P[id].c?`<span class="flag">${fl(P[id].c)}</span> `:''}<span class="${w===k?'w':''}">${P[id].n}</span>${sd(id)}${w===k?' <span class="ck">✓</span>':''}${!m.done&&m.srv===k?' <span class="ball"></span>':''}</span><b>${m.sets.map((s,i)=>s[k]+(m.tbs[i]!=null&&s[k]<s[1-k]?`<sup>${m.tbs[i]}</sup>`:'')).join(' ')}${m.done?'':` <i>${gameScore(m)[k]}</i>`}</b></div>`};
+  return `<div class="scm"><div class="hd"><span>${roundOf(x.i)} · ${mt.court}</span><span>${m.done?'':'<span class="pill live"><span class="dot"></span>Live</span> '}${clk(m.clock)}</span></div>${row(0)}${row(1)}
+   <div class="ft"><span>${m.done?P[m.p[w]].n+' wins '+scoreStr(m).replace(/  /g,', '):'Set '+m.sets.length+' in progress'}</span><span class="seg"><button data-h="${m.p[0]},${m.p[1]}">H2H</button><button data-m="${x.i}">Stats</button></span></div></div>`}
+function renderScores(){const h=T.filter(x=>x.m).reverse().slice(0,4).map(mini).join('');document.querySelectorAll('.hscores').forEach(el=>{el.innerHTML=h})}
+function renderHome(){
+  const now=TOUR.filter(e=>evInfo(e).status==='In progress'),next=TOUR.filter(e=>evInfo(e).status==='Upcoming')[0];
+  const line=e=>`<span class="flag">${flagOf(e[2])}</span> ${e[1]} · ${CAT[e[3]][0]} · ${SURFN[e[4]][0]} · ${evInfo(e).dates}`;
+  const days=e=>Math.max(1,Math.ceil((new Date(e[7]+'T00:00:00Z')-Date.now())/864e5));
+  const champs=TOUR.filter(e=>e[9]).slice(-6).reverse();
+  $('#hmain').innerHTML=`<div class="hero"><div class="eye">This week on tour</div>
+    ${now.length?now.map(e=>`<h1>${e[0]}</h1><p>${line(e)}</p>`).join(''):'<h1>No tour event this week</h1>'}
+    ${next?`<div class="eye" style="margin-top:14px">Up next</div><p><b>${next[0]}</b> · starts in ${days(next)} day${days(next)>1?'s':''}<br>${line(next)}</p>`:''}
+    <div class="row" style="margin-top:14px"><button class="btn" data-go="map">Tour map</button><button class="btn" data-go="rankings">Rankings</button><button class="btn" data-go="h2h">Head to head</button></div></div>
+   <div class="card scroll"><div class="pad row" style="justify-content:space-between;padding-bottom:0"><h2>ATP rankings · top 5</h2><button class="btn" data-go="rankings">Full rankings</button></div>
+    <table><tr><th>Rank</th><th>Player</th><th>Country</th><th>Points</th></tr>${RK.slice(0,5).map(r=>{const pl=PL.find(p=>p.full===r[1]);return `<tr${pl?` class="click" data-p="${pl.id}"`:''}><td class="w">${r[0]}${mvTag(r[4])}</td><td class="w">${r[1]}</td><td>${cty(r[2])}</td><td>${r[3].toLocaleString('en-US')}</td></tr>`}).join('')}</table></div>
+   <div class="card scroll"><div class="pad" style="padding-bottom:0"><h2>Latest champions</h2></div>
+    <table><tr><th>Tournament</th><th>Champion</th><th>Category</th><th>Dates</th></tr>${champs.map(e=>`<tr><td class="w">${e[0]}</td><td>${e[9]}</td><td>${CAT[e[3]][0]}</td><td>${evInfo(e).dates}</td></tr>`).join('')}</table>
+    </div>`;
+  renderScores();
+}
+const scoreClick=e=>{const h=e.target.closest('[data-h]'),m=e.target.closest('[data-m]'),g=e.target.closest('[data-go]'),p=e.target.closest('[data-p]'),v=e.target.closest('[data-ev]');
+  if(h){const[a,b]=h.dataset.h.split(',');openH2H(a,b)}else if(m){openDemoMatch(+m.dataset.m)}else if(v){evSub=v.dataset.ev;ev={mode:'demo'};go('event')}else if(g)go(g.dataset.go);else if(p)openPlayer(p.dataset.p)};
+
+/* ---------- head to head ---------- */
+// [height cm, plays, backhand hands, turned pro]
+const BIO={fed:[185,'R',1,1998],waw:[183,'R',1,2002],nad:[185,'L',2,2001],djo:[188,'R',2,2003],mur:[191,'R',2,2005],cil:[198,'R',2,2005],dim:[191,'R',1,2008],pcb:[188,'R',2,2009],nor:[188,'L',2,2017],med:[198,'R',2,2014],kha:[198,'R',2,2013],cor:[188,'R',2,2013],hur:[196,'R',2,2015],zve:[198,'R',2,2013],rub:[188,'R',2,2014],fri:[196,'R',2,2015],tsi:[193,'R',1,2016],ruu:[183,'R',2,2015],vac:[193,'R',2,null],pop:[196,'R',2,2017],dav:[183,'R',2,2017],sin:[191,'R',2,2018],dra:[193,'L',2,2018],she:[193,'L',2,2022],run:[188,'R',2,2020],alc:[183,'R',2,2018],fil:[185,'R',2,2021],men:[193,'R',2,null]};
+// Height, hand, backhand, turned pro, weight and birthdate from the TML player database (tools/build_archive.py).
+const BIOX={"fed":[185,"R",1,1998,85,"1981-08-08"],"waw":[183,"R",1,2002,81,"1985-03-28"],"nad":[185,"L",2,2001,85,"1986-06-03"],"djo":[188,"R",2,2003,77,"1987-05-22"],"mur":[191,"R",2,2005,82,"1987-05-15"],"cil":[198,"R",2,2005,89,"1988-09-28"],"dim":[191,"R",1,2008,81,"1991-05-16"],"pcb":[188,"R",2,2009,78,"1991-07-12"],"nor":[188,"L",2,2017,82,"1995-08-23"],"med":[198,"R",2,2014,83,"1996-02-11"],"kha":[198,"R",2,2013,87,"1996-05-21"],"cor":[188,"R",2,2013,85,"1996-11-14"],"hur":[196,"R",2,2015,81,"1997-02-11"],"zve":[198,"R",2,2013,90,"1997-04-20"],"rub":[188,"R",2,2014,75,"1997-10-20"],"fri":[196,"R",2,2015,86,"1997-10-28"],"tsi":[193,"R",1,2016,90,"1998-08-12"],"ruu":[183,"R",2,2015,81,"1998-12-22"],"vac":[193,"R",2,null,83,"1998-11-16"],"pop":[196,"R",2,2017,78,"1999-08-05"],"dav":[180,"R",2,2017,80,"1999-06-05"],"sin":[191,"R",2,2018,77,"2001-08-16"],"dra":[193,"L",2,2018,85,"2001-12-22"],"she":[193,"L",2,2022,88,"2002-10-09"],"run":[188,"R",2,2020,77,"2003-04-29"],"alc":[183,"R",2,2018,74,"2003-05-05"],"fil":[185,"R",2,2021,83,"2004-06-12"],"men":[196,"R",2,2022,87,"2005-09-01"],"flavio-cobolli":[183,"R",2,2020,74,"2002-05-06"],"frances-tiafoe":[188,"R",2,2015,86,"1998-01-20"],"alex-de-minaur":[183,"R",2,2015,69,"1999-02-17"],"rafael-jodar":[191,"R",2,null,70,"2006-09-17"],"tommy-paul":[185,"R",2,2015,82,"1997-05-17"],"felix-auger-aliassime":[193,"R",2,2017,88,"2000-08-08"],"jiri-lehecka":[185,"R",2,2020,81,"2001-11-08"],"brandon-nakashima":[188,"R",2,2019,83,"2001-08-03"],"francisco-cerundolo":[185,"R",2,2018,80,"1998-08-13"],"luciano-darderi":[183,"R",2,null,82,"2002-02-14"],"learner-tien":[180,"L",2,2023,73,"2005-12-02"],"lorenzo-musetti":[185,"R",1,2019,78,"2002-03-03"],"alexander-bublik":[196,"R",2,2016,82,"1997-06-17"],"alexander-blockx":[193,"R",2,null,83,"2005-04-08"],"tomas-martin-etcheverry":[196,"R",2,2017,82,"1999-07-18"],"alejandro-tabilo":[188,"L",2,2015,75,"1997-06-02"],"ignacio-buse":[183,"R",2,null,78,"2004-03-25"],"arthur-fery":[175,"R",2,null,76,"2002-07-12"],"luca-van-assche":[178,"R",2,2021,72,"2004-05-11"],"alex-michelsen":[193,"R",2,2023,79,"2004-08-25"],"jan-lennard-struff":[193,"R",2,2009,92,"1990-04-25"],"matteo-arnaldi":[185,"R",2,2019,71,"2001-02-22"],"ugo-humbert":[188,"L",2,2016,73,"1998-06-26"],"botic-van-de-zandschulp":[191,"R",2,2016,85,"1995-10-04"],"nuno-borges":[185,"R",2,2019,78,"1997-02-19"],"daniel-merida":[188,"R",2,null,80,"2004-09-26"],"matteo-berrettini":[196,"R",2,2015,95,"1996-04-12"],"zizou-bergs":[185,"R",2,2018,88,"1999-06-03"],"quentin-halys":[191,"R",2,2012,85,"1996-10-26"],"joao-fonseca":[188,"R",2,null,81,"2006-08-21"],"arthur-gea":[180,"R",2,null,72,"2005-01-02"],"mariano-navone":[178,"R",2,null,73,"2001-02-27"],"tallon-griekspoor":[188,"R",2,2015,85,"1996-07-02"],"denis-shapovalov":[185,"L",1,2017,75,"1999-04-15"],"thiago-agustin-tirante":[185,"R",2,2016,81,"2001-04-10"],"sebastian-baez":[170,"R",2,2018,70,"2000-12-28"],"juan-manuel-cerundolo":[183,"L",2,2018,75,"2001-11-15"],"raphael-collignon":[191,"R",2,null,86,"2002-01-13"],"adolfo-daniel-vallejo":[183,"R",2,2023,75,"2004-04-28"],"jaime-faria":[188,"R",null,null,78,"2003-08-06"],"arthur-rinderknech":[196,"R",2,2018,88,"1995-07-23"],"rinky-hijikata":[178,"R",2,2021,72,"2001-02-23"],"tomas-machac":[183,"R",2,2017,74,"2000-10-13"],"adrian-mannarino":[180,"L",2,2004,79,"1988-06-29"],"mattia-bellucci":[175,"L",2,null,77,"2001-06-01"],"fabian-marozsan":[193,"R",2,2017,75,"1999-10-08"],"miomir-kecmanovic":[183,"R",2,2017,75,"1999-08-31"],"camilo-ugo-carabelli":[185,"R",2,2016,83,"1999-06-17"],"facundo-diaz-acosta":[183,"L",2,2018,75,"2000-12-15"],"yannick-hanfmann":[193,"R",2,2015,86,"1991-11-13"],"ethan-quinn":[191,"R",2,2023,82,"2004-03-12"],"vit-kopriva":[178,"R",2,2015,69,"1997-06-15"],"jaume-munar":[183,"R",2,2014,76,"1997-05-05"],"martin-landaluce":[193,"R",2,null,80,"2006-01-08"],"alex-molcan":[178,"L",2,2015,73,"1997-12-01"],"daniel-altmaier":[188,"R",1,2014,80,"1998-09-12"],"roman-safiullin":[185,"R",2,2015,75,"1997-08-07"],"terence-atmane":[193,"L",2,null,80,"2002-01-09"],"james-duckworth":[183,"R",2,2010,82,"1992-01-21"],"zachary-svajda":[175,"R",2,2019,70,"2002-11-29"],"roman-andres-burruchaga":[183,"R",2,null,80,"2002-01-23"],"hamad-medjedovic":[188,"R",2,2021,86,"2003-07-18"],"titouan-droguet":[191,"R",2,2018,80,"2001-06-15"],"kamil-majchrzak":[183,"R",2,2013,80,"1996-01-13"],"aleksandar-kovacevic":[183,"R",1,2021,79,"1998-08-29"],"chak-lam-coleman-wong":[191,"R",2,null,80,"2004-06-06"],"kyrian-jacquet":[175,"R",2,null,71,"2001-05-11"],"nikoloz-basilashvili":[185,"R",2,2008,79,"1992-02-23"],"jacob-fearnley":[183,"R",2,null,80,"2001-07-15"],"marco-trungelliti":[178,"R",2,2008,80,"1990-01-31"],"dino-prizmic":[188,"R",2,null,80,"2005-08-05"],"damir-dzumhur":[175,"R",2,2011,68,"1992-05-20"],"benjamin-bonzi":[183,"R",2,2015,82,"1996-06-09"],"bu-yunchaokete":[185,"R",2,null,82,"2002-01-19"],"jenson-brooksby":[193,"R",2,2021,86,"2000-10-26"],"marcos-giron":[180,"R",2,2014,77,"1993-07-24"],"toby-samuel":[191,"R",2,null,80,"2002-09-06"],"adam-walton":[183,"R",2,2022,77,"1999-04-17"],"thiago-seyboth-wild":[185,"R",2,2018,80,"2000-03-10"],"zsombor-piros":[180,"R",2,2016,68,"1999-10-13"],"michael-zheng":[188,"R",2,null,73,"2004-01-27"]};
+Object.keys(BIOX).forEach(k=>{BIO[k]=BIOX[k].map((v,n)=>v==null?(BIO[k]||[])[n]??null:v)});
+const ftin=cm=>{const t=Math.round(cm/2.54);return Math.floor(t/12)+"'"+t%12+'" ('+cm+'cm)'};
+// Career records that can no longer change because one of the two has retired.
+const H2HF={'fed|nad':[16,24],'fed|djo':[23,27],'nad|djo':[29,31],'fed|mur':[14,11],'nad|mur':[17,7],'djo|mur':[25,11],'fed|waw':[23,3],'nad|waw':[19,3],'waw|mur':[10,13]};
+let hh=null;
+function openH2H(a,b){hh={a,b};go('h2h')}
+const H2HA={};
+async function h2hArchive(){const a=P[hh.a],b=P[hh.b],key=a.id+'|'+b.id,out=[];hh.busy=key;renderH2H();
+  for(let y=2010;y<=2026;y++){const d=await loadYear(y);if(d===false){hh.busy=null;hh.err=true;renderH2H();return}if(!d)continue;
+    d.tours.forEach(t=>t.ms.forEach(m=>{if((same(m.w.name,a.full)&&same(m.l.name,b.full))||(same(m.w.name,b.full)&&same(m.l.name,a.full)))out.push(m)}))}
+  H2HA[key]=out.reverse();hh.busy=null;hh.err=false;if(hh.a===a.id&&hh.b===b.id)renderH2H()}
+function renderH2H(){
+  if(!hh){const x=T[Math.min(cur,14)];hh={a:x.p[0]||'sin',b:x.p[1]||'alc'}}
+  $('#ha').value=P[hh.a].full;$('#hb').value=P[hh.b].full;
+  const a=P[hh.a],b=P[hh.b],key=a.id+'|'+b.id;
+  if(a===b){$('#hbody').innerHTML='<div class="card pad sub">Choose two different players.</div>';return}
+  const fin=H2HF[key]||(H2HF[b.id+'|'+a.id]||[]).slice().reverse(),arc=H2HA[key];
+  const ms=T.filter(x=>x.m&&x.p.includes(a.id)&&x.p.includes(b.id));
+  const wins=p=>arc?arc.filter(m=>same(m.w.name,p.full)).length:ms.filter(x=>x.m.done&&x.m.p[x.m.winner]===p.id).length;
+  const wa=fin.length?fin[0]:wins(a),wb=fin.length?fin[1]:wins(b);
+  const head=(p,k)=>`<div>${avatar(p.full,'lg '+k)}<div><b>${p.full}</b></div><div>${p.c?cty(p.c):''}</div></div>`;
+  const info=p=>{const B=BIO[p.id]||[],inch=B[0]/2.54;
+    return [p.rank||(p.ret?'–':'Outside top 100'),p.age?p.age:'b. '+p.y,B[0]?ftin(B[0]):'–',B[4]?Math.round(B[4]*2.2046)+'lbs ('+B[4]+'kg)':'–',B[1]==='L'?'Left-handed':B[1]==='R'?'Right-handed':'–',B[2]===1?'One-handed':B[2]===2?'Two-handed':'–',B[3]||'–',p.ret?'Retired':'Active']};
+  const ia=info(a),ib=info(b),labs=['Rank','Age','Height','Weight','Plays','Backhand','Turned pro','Status'];
+  const won=p=>TOUR.filter(e=>e[9]&&plain(e[9])===plain(p.full)).length,bs=p=>{const s=series(p.id);return s.length?Math.min(...s.map(d=>d[1])):0};
+  const rows=[['2026 tour titles',won(a),won(b)],['Big titles',a.total,b.total],['Grand Slams',a.slams,b.slams],['Masters 1000',a.masters,b.masters],['ATP Finals',a.t[4],b.t[4]],['Weeks at No. 1',a.w,b.w],['Best season rank',bs(a),bs(b),1]];
+  const lab=fin.length?'Career record. It is final because one of the two has retired.':arc?'Tour-level main-draw matches since 2010.':'Wins counted from matches recorded on this site.';
+  const load=arc?'':hh.busy===key?'<span class="sub">Loading seasons 2010 to now…</span>':`<button class="btn" id="hload">Load their matches since 2010</button>${hh.err?`<span class="sub">${offMsg}</span>`:''}`;
+  const trs=(arc||[]).map(m=>`<tr><td>${m.t.y}</td><td class="w">${m.w.name}</td><td>${m.t.name}</td><td>${RESN[m.r]||m.r}</td><td>${m.t.sf}</td><td>${m.score}</td><td><button class="btn" data-am="${amKey(m)}">Match stats</button></td></tr>`).join('')+
+    ms.map(x=>{const m=x.m,w=m.done?P[m.p[m.winner]]:null;return `<tr><td>2026</td><td class="w">${w?w.full:'In progress'}</td><td>Harbor Indoor Open (demo)</td><td>${roundOf(x.i)}</td><td>Indoor hard</td><td>${scoreStr(m)}</td><td><button class="btn" data-m="${x.i}">Match stats</button></td></tr>`}).join('');
+  $('#hbody').innerHTML=`<div class="h2h-top">${head(a,'a')}<div class="mid"><span class="big">${wa}</span><span class="vs">Vs<br>wins</span><span class="big">${wb}</span></div>${head(b,'b')}</div>
+   <div class="row legend">${lab} ${load}</div>
+   <div class="card"><div class="heads"><span>${a.n}</span><span>${b.n}</span></div>
+    ${labs.map((l,i)=>`<div class="stat"><div class="top"><b>${ia[i]}</b><span class="lab">${l}</span><b>${ib[i]}</b></div></div>`).join('')}
+    ${rows.map(r=>{const fa=r[3]?(r[1]?1/r[1]:0):r[1],fb=r[3]?(r[2]?1/r[2]:0):r[2],t=fa+fb||1;
+     return `<div class="stat"><div class="top"><b>${r[1]||(r[3]?'–':0)}</b><span class="lab">${r[0]}</span><b>${r[2]||(r[3]?'–':0)}</b></div><div class="bar"><i style="flex:${fa/t||0.001}"></i><i style="flex:${fb/t||0.001}"></i></div></div>`}).join('')}</div>
+   <div class="card scroll"><div class="pad" style="padding-bottom:0"><h2>Event breakdown</h2></div>${trs?'<table><tr><th>Year</th><th>Winner</th><th>Event</th><th>Round</th><th>Surface</th><th>Score</th><th></th></tr>'+trs+'</table>'+(arc?archNote:''):`<div class="pad sub">${arc?'No tour-level meeting since 2010.':'No meeting recorded on this site yet. Use the button above to list their matches since 2010.'}</div>`}</div>`;
+  const hl=$('#hload');if(hl)hl.onclick=h2hArchive;
+}
+finder($('#ha'),$('#has'),()=>[hh.b],id=>{hh.a=id;$('#ha').blur();renderH2H()},()=>P[hh.a].full);
+finder($('#hb'),$('#hbs'),()=>[hh.a],id=>{hh.b=id;$('#hb').blur();renderH2H()},()=>P[hh.b].full);
+$('#hbody').onclick=e=>{const m=e.target.closest('[data-m]');if(m){openDemoMatch(+m.dataset.m)}};
+
+/* ---------- theme ---------- */
+const root=document.documentElement;
+try{const t=localStorage.getItem('rl-theme');if(t==='dark'||t==='light')root.dataset.theme=t}catch(e){}
+const isDark=()=>root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+function paintTheme(){$('#theme').textContent=isDark()?'Light mode':'Dark mode';$('#look').innerHTML='<span class="lk">Style: </span>'+LOOKS[root.dataset.look]}
+const LOOKS={carbon:'Carbon',primer:'Primer',fluent:'Fluent'};
+try{const l=localStorage.getItem('rl-look');if(LOOKS[l])root.dataset.look=l}catch(e){}
+$('#look').onclick=()=>{const k=Object.keys(LOOKS),n=k[(k.indexOf(root.dataset.look)+1)%k.length];root.dataset.look=n;try{localStorage.setItem('rl-look',n)}catch(e){}paintTheme();if(tab==='map')renderMap()};
+$('#theme').onclick=()=>{const n=isDark()?'light':'dark';root.dataset.theme=n;try{localStorage.setItem('rl-theme',n)}catch(e){}paintTheme();if(tab==='map')renderMap()};
+document.querySelector('a.brand').onclick=e=>{e.preventDefault();go('home')};
+
+/* ---------- shared: photos, player search ---------- */
+// Player photos are optional files you add yourself: photos/<name>.jpg, e.g. photos/jannik-sinner.jpg. Initials show when a file is missing.
+const noPhoto=new Set();
+const slug=n=>plain(n).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+// Every ranked player gets a profile; big-title winners keep the richer one they already have.
+RK.forEach((r,i)=>{let p=PL.find(p=>plain(p.full)===plain(r[1]));
+  if(p)r[1]=p.full;else{p=P[slug(r[1])]={id:slug(r[1]),n:r[1].split(' ').slice(1).join(' '),full:r[1],c:r[2],y:null,ret:false,t:Array(15).fill(0),x:0,w:0,ye:0,total:0,strike:0,slams:0,masters:0};PL.push(p)}
+  p.rank=r[0];p.age=RKA[i]});
+PL.forEach(p=>{const b=BIO[p.id];if(b&&b[5]){const d=new Date(b[5]);p.y=p.y||d.getUTCFullYear();p.age=Math.floor((Date.now()-d)/31557600000)}});
+try{const s=JSON.parse(localStorage.getItem('rl-sel'));if(Array.isArray(s))sel=new Set(s.filter(i=>P[i]))}catch(e){}
+async function fillActivity(){
+  const id=prof.id,y=prof.year,p=P[id];if(!y||!$('#pact'))return;
+  $('#pact').innerHTML=`<div class="pad sub">Loading the ${y} season…</div>`;
+  const d=await loadYear(y),box=$('#pact');if(prof.id!==id||prof.year!==y||!box)return;
+  if(d===false){box.innerHTML=`<div class="pad sub">${offMsg}</div>`;return}
+  if(d===null){box.innerHTML=`<div class="pad sub">There is no data file for ${y}.</div>`;return}
+  const bl=[];let W=0,L=0,ti=0,tot=0;
+  for(const t of d.tours){const won=m=>same(m.w.name,p.full),ms=t.ms.filter(m=>won(m)||same(m.l.name,p.full));if(!ms.length)continue;
+    ms.sort((a,b)=>ordR(b.r)-ordR(a.r)||b.num-a.num);
+    const loss=ms.find(m=>!won(m)&&m.r!=='RR'),f=ms.find(m=>m.r==='F'&&won(m)),res=f?'W':loss?loss.r:ms.some(m=>m.r==='RR')?'RR':'–';
+    const pts=ptsFor(t,res,ms.filter(m=>m.r==='RR'&&won(m)).length,ms.some(m=>m.r==='SF'&&won(m)),!!f);
+    ms.forEach(m=>won(m)?W++:L++);if(f)ti++;if(pts)tot+=pts;bl.push({t,ms,res,pts,won})}
+  if(!bl.length){box.innerHTML=`<div class="pad sub">No tour-level match is recorded for ${p.full} in ${y}.</div>`;return}
+  box.innerHTML=`<div class="scroll"><table class="act"><tr><th>Round</th><th></th><th>Opponent (rank)</th><th>Score</th><th>Event result</th><th>Points</th></tr>`+bl.reverse().map(b=>`<tr class="evh"><td colspan="4"><b>${b.t.name}</b> <span class="cc">${LVN[lvl(b.t)]} · ${b.t.sf} · ${fmtD(new Date(b.t.date+'T00:00:00Z'),true)}</span></td><td class="w">${RESN[b.res]||b.res}</td><td class="w">${b.pts==null?'–':b.pts}</td></tr>`+
+    b.ms.map(m=>{const w=b.won(m),o=w?m.l:m.w;return `<tr class="click" data-am="${amKey(m)}"><td>${m.r}</td><td class="${w?'up':'dn'}">${w?'W':'L'}</td><td>${o.name}${o.rank?` <span class="seed">(${o.rank})</span>`:''}</td><td>${m.score}</td><td></td><td></td></tr>`}).join('')).join('')+`</table></div>
+   <div class="tiles" style="border-radius:0;border-width:1px 0"><div><b>${W}–${L}</b><span>${y} win–loss</span></div><div><b>${bl.length}</b><span>Events</span></div><div><b>${ti}</b><span>Titles</span></div><div><b>${tot.toLocaleString('en-US')}</b><span>Points earned (estimate)</span></div></div>
+   <div class="pad legend">Tour-level main-draw matches. Points use the standard ATP table for the round reached, so they are an estimate: byes, qualifying points and the best-results rule are not applied.</div>${archNote}`;
+}
+
+function avatar(name,cls=''){const k=slug(name);return `<span class="av ${cls}">${name.split(' ').map(w=>w[0]).slice(0,2).join('')}${noPhoto.has(k)?'':`<img class="ph" data-k="${k}" src="photos/${k}.jpg" alt="">`}</span>`}
+document.addEventListener('error',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('ph')){noPhoto.add(t.dataset.k);t.remove()}},true);
+function finder(inp,ul,exclude,pick,restore){
+  const draw=()=>{const q=plain(inp.value.trim()),ex=exclude();
+    const list=PL.filter(p=>!ex.includes(p.id)&&(!q||plain(p.full).includes(q)||p.c.toLowerCase().includes(q))).slice(0,8);
+    ul.hidden=false;ul.innerHTML=list.length?list.map(p=>`<li role="option" data-p="${p.id}"><span>${p.c?`<span class="flag">${fl(p.c)}</span> `:''}${p.full}</span><span class="cc">${p.total} big title${p.total>1?'s':''}</span></li>`).join(''):'<li class="none">No player matches that search.</li>'};
+  inp.oninput=draw;
+  inp.onfocus=()=>{if(restore)inp.value='';draw()};
+  inp.onblur=()=>{ul.hidden=true;if(restore)inp.value=restore()};
+  inp.onkeydown=e=>{if(e.key==='Escape')inp.blur();else if(e.key==='Enter'){const f=ul.querySelector('li[data-p]');if(f)pick(f.dataset.p)}};
+  ul.onmousedown=e=>{e.preventDefault();const li=e.target.closest('li[data-p]');if(li)pick(li.dataset.p)};
+  return draw;
+}
+$('#v-home').onclick=scoreClick;$('#v-rankings').onclick=scoreClick;
+
+/* ---------- tournaments ---------- */
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CN={HK:'Hong Kong',AU:'Australia',NZ:'New Zealand',FR:'France',US:'USA',NL:'Netherlands',AR:'Argentina',QA:'Qatar',BR:'Brazil',AE:'UAE',MX:'Mexico',CL:'Chile',MA:'Morocco',RO:'Romania',ES:'Spain',DE:'Germany',IT:'Italy',CH:'Switzerland',GB:'Great Britain',SE:'Sweden',HR:'Croatia',AT:'Austria',PT:'Portugal',CA:'Canada',CN:'China',JP:'Japan',KZ:'Kazakhstan',BE:'Belgium'};
+let tOpen=new Set([new Date().getMonth()]);
+function renderTour(){
+  const q=plain($('#tq').value.trim());let h='',n=0;
+  for(let m=0;m<12;m++){const all=TOUR.filter(e=>+e[7].slice(5,7)-1===m);if(!all.length)continue;n++;
+    const evs=all.filter(e=>!q||plain(e[0]+' '+e[1]+' '+CN[e[2]]).includes(q));if(!evs.length)continue;
+    const open=q||tOpen.has(m);
+    h+=`<div class="mon"><button class="mh" data-mon="${m}" aria-expanded="${!!open}"><span>${MON[m]}, 2026 <span class="cnt">(${evs.length} event${evs.length>1?'s':''})</span></span><span>${open?'▾':'▸'}</span></button>${open?evs.map(e=>{const i=evInfo(e);
+      return `<div class="card tcard"><span class="tier t-${e[3]}">${CAT[e[3]][0]}</span><div class="ti"><b>${e[1]}, ${CN[e[2]]} <span class="flag">${flagOf(e[2])}</span></b><div class="sub">${e[0]} | ${i.dates}</div>${e[9]?`<div class="sub">Champion: ${e[9]}</div>`:''}</div><div class="tm">${e[4]==='C'?'Clay':e[4]==='G'?'Grass':'Hard'}<br>${e[4]==='IH'?'Indoor':'Outdoor'}</div><div class="ta">${i.status==='In progress'?'<span class="pill live">In progress</span>':`<span class="pill">${i.status}</span>`}<button class="btn" data-e="${TOUR.indexOf(e)}">Map</button></div></div>`}).join(''):''}</div>`}
+  $('#tlist').innerHTML=h||'<div class="card pad sub">No tournament matches that search.</div>';
+  $('#topen').textContent=tOpen.size>=n?'Close all':'Open all';$('#topen').dataset.n=n;
+}
+$('#tq').oninput=renderTour;
+$('#topen').onclick=()=>{if(tOpen.size>=+$('#topen').dataset.n)tOpen.clear();else for(let m=0;m<12;m++)tOpen.add(m);renderTour()};
+$('#tlist').onclick=e=>{const mh=e.target.closest('.mh'),ev=e.target.closest('[data-e]');
+  if(ev){msel=TOUR[+ev.dataset.e];mcat='all';go('map')}else if(mh){const m=+mh.dataset.mon;tOpen.has(m)?tOpen.delete(m):tOpen.add(m);renderTour()}};
+
+/* ---------- match archive: open dataset, loaded on demand ---------- */
+// Every tour-level main-draw match from 2010 to now, from the Tennismylife (TML) ATP database.
+// Built into site/data/y<year>.js by tools/build_archive.py; a season loads the first time it is needed.
+const ARCH={y:{},season:null,off:false};
+const AM=[];const amKey=m=>AM.push(m)-1;
+const NS=[null,null,null,null,null,null,null,null];
+function loadYear(y){
+  if(y<2010||y>2026)return Promise.resolve(null);
+  return ARCH.y[y]||(ARCH.y[y]=loadCh('y'+y).then(d=>{if(!d){delete ARCH.y[y];return false}return d.x||(d.x=expandYear(d))}));
+}
+function expandYear(d){
+  const tours=d.T.map(t=>{const o={y:d.y,id:t[0],name:t[1],lv:t[2],sf:(t[3]||'–')+(t[4]==='I'?' (indoor)':''),draw:t[5],date:t[6],ms:[]};
+    const side=(k,seed,entry,rank)=>({name:d.P[k][0],ioc:d.P[k][1],seed:seed||'',entry:entry||'',rank:rank||null});
+    o.ms=t[7].map((m,i)=>({t:o,num:i,r:m[0],w:side(m[1],m[5],m[7],m[9]),l:side(m[2],m[6],m[8],m[10]),score:m[3],min:m[4]||null,date:m[11]||t[6],sw:m[12]?m[12].slice(0,8):NS,sl:m[12]?m[12].slice(8):NS}));return o});
+  return {y:d.y,tours};
+}
+async function pickSeason(){if(ARCH.season!=null||ARCH.off)return;for(const y of [2026,2025,2024,2023]){const d=await loadYear(y);if(d){ARCH.season=y;return}if(d===false){ARCH.off=true;return}}ARCH.off=true}
+const nkM=new Map(),nk=s=>{let v=nkM.get(s);if(!v){v=plain(s).replace(/[^a-z ]+/g,' ').trim().split(/\s+/);nkM.set(s,v)}return v};
+function same(a,b){const x=nk(a),y=nk(b);if(x.length<2||y.length<2)return false;const s=x.length<=y.length?x:y,l=s===x?y:x;return s.every(t=>l.includes(t))}
+const A500=['rotterdam','dubai','acapulco','rio de janeiro','barcelona','hamburg','halle',"queen's club",'washington','beijing','tokyo','vienna','basel'];
+function lvl(t){const n=t.name.toLowerCase();if(t.lv==='250'||t.lv==='500')return t.lv;
+  if(t.lv==='G')return 'gs';if(t.lv==='M')return 'm';if(t.lv==='F')return n.includes('next')?'ng':'fin';if(t.lv==='D')return 'dc';if(t.lv==='O'||n.includes('olympic'))return 'oly';if(n.includes(' cup'))return 'team';
+  if(A500.some(k=>n.includes(k))||(t.y>=2025&&/doha|dallas|munich/.test(n))||(t.y<=2014&&n.includes('valencia'))||(t.y<=2013&&n.includes('memphis')))return '500';return '250'}
+const LVN={gs:'Grand Slam',m:'Masters 1000',fin:'ATP Finals',ng:'Next Gen Finals',dc:'Davis Cup',oly:'Olympics',team:'Team event','500':'ATP 500','250':'ATP 250'};
+const RO=['R128','R64','R32','R16','QF','SF','F'],ordR=r=>({RR:0,DC:0,R128:1,R64:2,R32:3,R16:4,QF:5,BR:6,SF:6,F:7}[r]||0);
+const RESN={W:'Champion',F:'Final',SF:'Semifinal',QF:'Quarterfinal',R16:'Round of 16',R32:'Round of 32',R64:'Round of 64',R128:'Round of 128',RR:'Round robin',BR:'Bronze match',DC:'Davis Cup tie'};
+// Ranking points by round reached, from the standard ATP table (2024 table from 2024 on). An estimate: byes, qualifying points and special cases are not modelled.
+function ptsFor(t,res,rrWins,sfWin,fWin){const k=lvl(t),n=t.y>=2024,big=(t.draw||0)>=96;
+  if(k==='fin')return rrWins*200+(sfWin?400:0)+(fWin?500:0);
+  const tb={gs:n?{W:2000,F:1300,SF:800,QF:400,R16:200,R32:100,R64:50,R128:10}:{W:2000,F:1200,SF:720,QF:360,R16:180,R32:90,R64:45,R128:10},
+    m:n?{W:1000,F:650,SF:400,QF:200,R16:100,R32:50,R64:big?30:10,R128:10}:{W:1000,F:600,SF:360,QF:180,R16:90,R32:45,R64:big?25:10,R128:10},
+    '500':n?{W:500,F:330,SF:200,QF:100,R16:50}:{W:500,F:300,SF:180,QF:90,R16:45},
+    '250':n?{W:250,F:165,SF:100,QF:50,R16:25}:{W:250,F:150,SF:90,QF:45,R16:20}}[k];
+  return tb?(tb[res]||0):null}
+function scoreSets(score){const out=[];let tag='';for(const tok of score.split(/\s+/)){const m=tok.match(/^(\d+)-(\d+)(?:\((\d+)\))?$/);if(m)out.push([+m[1],+m[2],m[3]==null?null:+m[3]]);else if(tok)tag=tok}return {out,tag}}
+const champOf=t=>{const f=t.ms.find(m=>m.r==='F');return f?f.w.name:''};
+const an=o=>`${fl(o.ioc)?`<span class="flag">${fl(o.ioc)}</span> `:''}${o.name}${o.seed?` <span class="seed">[${o.seed}]</span>`:o.entry?` <span class="seed">${o.entry}</span>`:''}`;
+const archNote='<div class="pad legend">Match data: Tennismylife (TML) ATP database. The latest matches, without serve statistics, are entered from published results.</div>';
+const offMsg='This season\'s data file could not be loaded. Check that the data folder sits next to index.html.';
+
+/* ---------- events: all events -> one event ---------- */
+let ev={mode:'list'};
+function openDemoMatch(i){view=i;am=null;cm=null;lv={kind:'demo'};go('live')}
+function openArchMatch(m){lv={kind:'arch',t:m.t};am=m;cm=null;go('live')}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-am]');if(el&&AM[+el.dataset.am])openArchMatch(AM[+el.dataset.am])});
+function renderEvent(){
+  if(ev.mode==='list')return renderEvList();
+  $('#evlist').hidden=true;$('#evone').hidden=false;
+  document.querySelectorAll('#evseg button').forEach(b=>b.classList.toggle('on',b.dataset.s===evSub));
+  $('#evseg').hidden=ev.mode==='cal'||ev.mode==='ch';
+  if(ev.mode==='ch'){const e=ev.ce;$('#evhead').innerHTML=`<h1>${e.n} ${e.y}</h1><p class="sub">${e.sf} · ${chDates(e)} · ${e.c} matches recorded point by point${e.f?' · Final: '+e.f:''}</p>`;
+    $('#evbody').innerHTML='<div class="pad sub">Loading matches…</div>';
+    loadCh(e.id).then(d=>{if(ev.ce!==e)return;$('#evbody').innerHTML=d?'<table><tr><th>Round</th><th>Match</th><th>Score</th><th>Points</th><th></th></tr>'+d.ms.map(m=>`<tr class="click" data-ch="${m.i}" tabindex="0"><td>${RESN[m.r]||m.r}</td><td><span class="${m.w===0?'w':''}">${pf2(m.a)}${m.a}</span> <span class="cc">v</span> <span class="${m.w===1?'w':''}">${pf2(m.b)}${m.b}</span></td><td>${chScore(m,1)}</td><td>${m.p.length}</td><td><button class="btn">Replay</button></td></tr>`).join('')+'</table><div class="pad legend">These are the matches volunteers have charted for this event, not its full draw.</div>'+chNote:'<div class="pad sub">This event\'s data file could not be loaded. Check that the data folder sits next to index.html.</div>'});return}$('#evseg button').textContent=ev.mode==='demo'?'Schedule':'Schedule & results';
+  if(ev.mode==='demo'){$('#evhead').innerHTML='<h1>Harbor Indoor Open 2026</h1><p class="sub">Indoor hard · 16-player singles draw · 12–16 November 2026</p><p class="note" style="margin-top:8px">Demo event. The field, seeds, draw and scores are simulated in your browser so the live tracker has something to follow.</p>';renderDemoEvent()}
+  else if(ev.mode==='arch')renderArchEvent();
+  else{const e=ev.e;$('#evhead').innerHTML=`<h1>${e[0]} 2026</h1><p class="sub">${CAT[e[3]][0]} · ${SURFN[e[4]][0]} · ${e[1]}, ${CN[e[2]]}</p>`;
+    $('#evbody').innerHTML=`<div class="pad" style="line-height:1.7">${evCard(e)}<p class="sub" style="margin-top:10px">For the results, players and draw of a finished event, open it in the 2026 season group on the Events page.</p><button class="btn" data-map="${TOUR.indexOf(e)}">Show on the map</button></div>`}
+}
+async function renderEvList(){
+  $('#evlist').hidden=false;$('#evone').hidden=true;
+  const cal=TOUR.slice().sort((a,b)=>b[7].localeCompare(a[7]));
+  const crow=e=>{const i=evInfo(e);return `<tr class="click" data-evc="${TOUR.indexOf(e)}" tabindex="0"><td>${i.dates}</td><td class="w">${e[0]}</td><td>${CAT[e[3]][0]}</td><td>${SURFN[e[4]][0]}</td><td>${i.status==='In progress'?'<span class="pill live">In progress</span>':i.status}</td><td>${e[9]||'–'}</td></tr>`};
+  $('#evlist').innerHTML=`<div><h1>Events</h1><p class="sub">Open a group, then select an event to see its results, players and seeds, and draw.</p></div>
+   <details class="evg card" open><summary>Live now <span class="cnt">(1 event)</span></summary><div class="scroll"><table><tr class="click" data-evd="1" tabindex="0"><td>12 Nov – 16 Nov 2026</td><td class="w">Harbor Indoor Open</td><td>Demo event</td><td>Indoor hard</td><td><span class="pill live"><span class="dot"></span>Live</span></td><td>Simulated scores</td></tr></table></div></details>
+   <details class="evg card" open><summary>Recent events, point by point <span class="cnt">(${CH.length} events, ${CH.reduce((a,e)=>a+e.c,0)} real matches)</span></summary><div class="scroll"><table><tr><th>Dates</th><th>Event</th><th>Surface</th><th>Matches</th><th>Final</th></tr>${CH.map((e,i)=>`<tr class="click" data-evh="${i}" tabindex="0"><td>${chDates(e)}</td><td class="w">${e.n} ${e.y}</td><td>${e.sf}</td><td>${e.c}</td><td>${e.f||'–'}</td></tr>`).join('')}</table></div>${chNote}</details>
+   <div id="evarch"><div class="card pad sub">Loading the match archive…</div></div>
+   <details class="evg card"><summary>2026 calendar <span class="cnt">(${cal.length} events: dates, venues, champions)</span></summary><div class="scroll"><table><tr><th>Dates</th><th>Event</th><th>Category</th><th>Surface</th><th>Status</th><th>Champion</th></tr>${cal.map(crow).join('')}</table></div></details>`;
+  await pickSeason();const y=ARCH.season,d=y?await loadYear(y):false;
+  if(ev.mode!=='list'||!$('#evarch'))return;
+  const nav=y?`<span class="row" style="gap:6px"><button class="btn" data-season="${y-1}"${y<=2010?' disabled':''}>◀ ${y-1}</button><button class="btn" data-season="${y+1}"${y>=2026?' disabled':''}>${y+1} ▶</button></span>`:'';
+  if(!d){$('#evarch').innerHTML=`<div class="card pad"><div class="row" style="justify-content:space-between"><b>${y?y+' season':'Past seasons'}</b>${nav}</div><p class="sub" style="margin:8px 0 0">${d===null?'There is no data file for '+y+'.':offMsg}</p></div>`;return}
+  const ts=d.tours.filter(t=>t.lv!=='D').slice().reverse();
+  $('#evarch').innerHTML=`<details class="evg card" open><summary>${y} season <span class="cnt">(${ts.length} events, full results)</span></summary><div class="pad row" style="justify-content:space-between;padding-bottom:0"><span class="sub">Newest first.</span>${nav}</div>
+   <div class="scroll"><table><tr><th>Start</th><th>Event</th><th>Category</th><th>Surface</th><th>Draw</th><th>Champion</th></tr>${ts.map(t=>`<tr class="click" data-evt="${d.tours.indexOf(t)}" tabindex="0"><td>${fmtD(new Date(t.date+'T00:00:00Z'),true)}</td><td class="w">${t.name}</td><td>${LVN[lvl(t)]}</td><td>${t.sf}</td><td>${t.draw||'–'}</td><td>${champOf(t)||'–'}</td></tr>`).join('')}</table></div>${archNote}</details>`;
+}
+function renderArchEvent(){
+  const t=ev.t,c=champOf(t);
+  $('#evhead').innerHTML=`<h1>${t.name} ${t.y}</h1><p class="sub">${LVN[lvl(t)]} · ${t.sf} · ${t.draw?t.draw+' draw · ':''}started ${fmtD(new Date(t.date+'T00:00:00Z'),true)}${c?' · Champion: '+c:''}</p>`;
+  const rounds=[...new Set(t.ms.map(m=>m.r))].sort((a,b)=>ordR(b)-ordR(a));let h='';
+  if(evSub==='schedule'){
+    const days=[...new Set(t.ms.map(m=>m.date))].sort().reverse(),byDay=days.length>1,keys=byDay?days:rounds;
+    h='<table>'+keys.map(k=>`<tr><td colspan="5" class="day">${byDay?fmtD(new Date(k+'T00:00:00Z'),true):RESN[k]||k}</td></tr>`+t.ms.filter(m=>(byDay?m.date:m.r)===k).sort((a,b)=>ordR(b.r)-ordR(a.r)).map(m=>`<tr class="click" data-am="${amKey(m)}" tabindex="0"><td class="cc">${byDay?RESN[m.r]||m.r:''}</td><td class="w">${an(m.w)}</td><td><span class="cc">d.</span> ${an(m.l)}</td><td>${m.score}</td><td>${m.min?dur(m.min*60):''}</td></tr>`).join('')).join('')+'</table>';
+  }else if(evSub==='field'){
+    const ps={};t.ms.forEach(m=>{[[m.w,1],[m.l,0]].forEach(([o,w])=>{const p=ps[o.name]||(ps[o.name]={o,best:-1,res:''});const v=ordR(m.r)+(w&&m.r==='F'?1:0);if(v>p.best){p.best=v;p.res=w&&m.r==='F'?'Champion':w?'':'Lost in '+(RESN[m.r]||m.r).toLowerCase()}if(!w&&m.r!=='RR')p.res='Lost in '+(RESN[m.r]||m.r).toLowerCase()})});
+    const list=Object.values(ps).sort((a,b)=>(+a.o.seed||99)-(+b.o.seed||99)||(a.o.rank||9999)-(b.o.rank||9999));
+    h='<table><tr><th>Seed</th><th>Player</th><th>Country</th><th>Rank then</th><th>Entry</th><th>Result</th></tr>'+list.map(p=>`<tr class="click" data-pn="${p.o.name}" tabindex="0"><td>${p.o.seed||'–'}</td><td class="w">${p.o.name}</td><td class="cc">${fl(p.o.ioc)?`<span class="flag">${fl(p.o.ioc)}</span> `:''}${p.o.ioc||'–'}</td><td>${p.o.rank||'–'}</td><td>${{Q:'Qualifier',WC:'Wild card',LL:'Lucky loser',PR:'Protected ranking',SE:'Special exempt'}[p.o.entry]||'Direct'}</td><td>${p.res||'Round robin'}</td></tr>`).join('')+'</table>';
+  }else{
+    const by={};t.ms.forEach(m=>(by[m.r]||(by[m.r]=[])).push(m));const rs=RO.filter(r=>by[r]);
+    if(!by.F)h='<div class="pad sub">No knockout draw is recorded for this event.</div>';
+    else{let cur=[by.F[0]];const cols=[cur];
+      for(let k=rs.length-2;k>=0;k--){const pool=by[rs[k]],nx=[];for(const m of cur){if(!m){nx.push(null,null);continue}for(const nm of [m.top||m.w.name,m.top?(m.top===m.w.name?m.l.name:m.w.name):m.l.name])nx.push(pool.find(x=>x.w.name===nm)||null)}cols.unshift(nx);cur=nx}
+      const box=m=>{if(!m)return '<div class="bm bye"><div><span>Bye</span><span></span></div><div><span>&nbsp;</span><span></span></div></div>';const s=scoreSets(m.score);
+        const line=(o,k)=>`<div class="${k?'':'w'}"><span>${o.name}${o.seed?` <span class="seed">[${o.seed}]</span>`:''}</span><span>${s.out.map(x=>x[k]).join(' ')}${k&&s.tag?' '+s.tag:''}</span></div>`;
+        return `<button class="bm" data-am="${amKey(m)}" aria-label="Open match">${line(m.w,0)}${line(m.l,1)}</button>`};
+      h=`<div class="bracket" style="grid-template-columns:repeat(${rs.length},minmax(190px,1fr));min-width:${rs.length*200}px">`+cols.map((c,i)=>`<div class="bcol"><h2>${RESN[rs[i]]||rs[i]}</h2>${c.map(box).join('')}</div>`).join('')+'</div>'+(by.RR?'<div class="pad sub">Round-robin matches are listed under Results.</div>':'')}
+  }
+  $('#evbody').innerHTML=h+archNote;
+}
+$('#evlist').onclick=e=>{const d=e.target.closest('[data-evd]'),t=e.target.closest('[data-evt]'),c=e.target.closest('[data-evc]'),s=e.target.closest('[data-season]');
+  if(s){ARCH.season=+s.dataset.season;renderEvList();return}
+  const h=e.target.closest('[data-evh]');if(h){ev={mode:'ch',ce:CH[+h.dataset.evh]};renderEvent();window.scrollTo(0,0);return}
+  if(d)ev={mode:'demo'};else if(t)ev={mode:'arch',t:null,ti:+t.dataset.evt};else if(c)ev={mode:'cal',e:TOUR[+c.dataset.evc]};else return;
+  evSub='schedule';
+  if(ev.mode==='arch')loadYear(ARCH.season).then(dd=>{ev.t=dd.tours[ev.ti];renderEvent();window.scrollTo(0,0)});else{renderEvent();window.scrollTo(0,0)}};
+$('#evback').onclick=()=>{ev={mode:'list'};renderEvent()};
+/* ---------- charted matches: real point-by-point data, one file per event ---------- */
+// Match Charting Project by Jeff Sackmann and volunteers (github.com/JeffSackmann/tennis_MatchChartingProject), CC BY-NC-SA 4.0.
+// Built into site/data by tools/build_charted.py. CH lists the events; each event's matches load when opened.
+const CH=[{"id":"2026-rome-masters","n":"Rome Masters","y":2026,"d0":"20260507","d1":"20260517","sf":"Clay","c":3,"f":"Jannik Sinner d. Casper Ruud"},{"id":"2026-madrid-masters","n":"Madrid Masters","y":2026,"d0":"20260422","d1":"20260503","sf":"Clay","c":7,"f":"Jannik Sinner d. Alexander Zverev"},{"id":"2026-barcelona","n":"Barcelona","y":2026,"d0":"20260416","d1":"20260419","sf":"Clay","c":3,"f":"Arthur Fils d. Andrey Rublev"},{"id":"2026-monte-carlo-masters","n":"Monte Carlo Masters","y":2026,"d0":"20260405","d1":"20260412","sf":"Clay","c":12,"f":"Jannik Sinner d. Carlos Alcaraz"},{"id":"2026-miami-masters","n":"Miami Masters","y":2026,"d0":"20260319","d1":"20260329","sf":"Hard","c":11,"f":"Jannik Sinner d. Jiri Lehecka"},{"id":"2026-indian-wells-masters","n":"Indian Wells Masters","y":2026,"d0":"20260304","d1":"20260315","sf":"Hard","c":19,"f":"Jannik Sinner d. Daniil Medvedev"},{"id":"2026-dubai","n":"Dubai","y":2026,"d0":"20260224","d1":"20260227","sf":"Hard","c":7,"f":""},{"id":"2026-doha","n":"Doha","y":2026,"d0":"20260216","d1":"20260221","sf":"Hard","c":3,"f":"Carlos Alcaraz d. Arthur Fils"},{"id":"2026-rotterdam","n":"Rotterdam","y":2026,"d0":"20260209","d1":"20260215","sf":"Hard","c":14,"f":"Alex De Minaur d. Felix Auger Aliassime"},{"id":"2026-montpellier","n":"Montpellier","y":2026,"d0":"20260202","d1":"20260205","sf":"Hard","c":6,"f":""},{"id":"2026-australian-open","n":"Australian Open","y":2026,"d0":"20260118","d1":"20260201","sf":"Hard","c":28,"f":"Carlos Alcaraz d. Novak Djokovic"},{"id":"2026-united-cup","n":"United Cup","y":2026,"d0":"20260102","d1":"20260111","sf":"Hard","c":9,"f":"Hubert Hurkacz d. Stan Wawrinka"},{"id":"2026-hong-kong","n":"Hong Kong","y":2026,"d0":"20260104","d1":"20260111","sf":"Hard","c":3,"f":"Alexander Bublik d. Lorenzo Musetti"},{"id":"2026-brisbane","n":"Brisbane","y":2026,"d0":"20260104","d1":"20260111","sf":"Hard","c":7,"f":"Daniil Medvedev d. Brandon Nakashima"},{"id":"2025-nextgen-finals","n":"NextGen Finals","y":2025,"d0":"20251217","d1":"20251221","sf":"Hard","c":4,"f":""},{"id":"2025-davis-cup-finals","n":"Davis Cup Finals","y":2025,"d0":"20251121","d1":"20251123","sf":"Hard","c":3,"f":""},{"id":"2025-tour-finals","n":"Tour Finals","y":2025,"d0":"20251110","d1":"20251116","sf":"Hard","c":8,"f":"Jannik Sinner d. Carlos Alcaraz"},{"id":"2025-athens","n":"Athens","y":2025,"d0":"20251102","d1":"20251108","sf":"Hard","c":6,"f":"Novak Djokovic d. Lorenzo Musetti"},{"id":"2025-paris-masters","n":"Paris Masters","y":2025,"d0":"20251027","d1":"20251102","sf":"Hard","c":8,"f":"Jannik Sinner d. Felix Auger Aliassime"},{"id":"2025-vienna","n":"Vienna","y":2025,"d0":"20251022","d1":"20251026","sf":"Hard","c":5,"f":"Jannik Sinner d. Alexander Zverev"},{"id":"2025-basel","n":"Basel","y":2025,"d0":"20251021","d1":"20251026","sf":"Hard","c":3,"f":"Joao Fonseca d. Alejandro Davidovich Fokina"},{"id":"2025-stockholm","n":"Stockholm","y":2025,"d0":"20251013","d1":"20251019","sf":"Hard","c":4,"f":"Casper Ruud d. Ugo Humbert"},{"id":"2025-almaty","n":"Almaty","y":2025,"d0":"20251013","d1":"20251019","sf":"Hard","c":4,"f":"Daniil Medvedev d. Corentin Moutet"},{"id":"2025-shanghai-masters","n":"Shanghai Masters","y":2025,"d0":"20251002","d1":"20251012","sf":"Hard","c":7,"f":"Valentin Vacherot d. Arthur Rinderknech"},{"id":"2025-beijing","n":"Beijing","y":2025,"d0":"20250925","d1":"20251001","sf":"Hard","c":3,"f":"Jannik Sinner d. Learner Tien"},{"id":"2025-tokyo","n":"Tokyo","y":2025,"d0":"20250925","d1":"20250930","sf":"Hard","c":6,"f":"Carlos Alcaraz d. Taylor Fritz"},{"id":"2025-chengdu","n":"Chengdu","y":2025,"d0":"20250920","d1":"20250923","sf":"Hard","c":3,"f":"Alejandro Tabilo d. Lorenzo Musetti"},{"id":"2025-us-open","n":"US Open","y":2025,"d0":"20250824","d1":"20250907","sf":"Hard","c":23,"f":"Carlos Alcaraz d. Jannik Sinner"},{"id":"2025-cincinnati-masters","n":"Cincinnati Masters","y":2025,"d0":"20250804","d1":"20250818","sf":"Hard","c":8,"f":""},{"id":"2025-canada-masters","n":"Canada Masters","y":2025,"d0":"20250727","d1":"20250807","sf":"Hard","c":11,"f":"Ben Shelton d. Karen Khachanov"}];
+const CHD={},CHL={};window.RLD=(id,d)=>{CHD[id]=d;if(d.ms)d.ms.forEach((m,i)=>{m.i=i;m.e=CH.find(e=>e.id===id)})};
+function loadCh(id){if(CHD[id])return Promise.resolve(CHD[id]);
+  return CHL[id]||(CHL[id]=new Promise(res=>{const s=document.createElement('script');s.src='data/'+id+'.js';s.onload=()=>res(CHD[id]||null);
+    s.onerror=async()=>{try{const t=await(await fetch('data/'+id+'.js')).text();window.RLD(id,JSON.parse(t.slice(t.indexOf(',')+1,t.lastIndexOf(')'))));res(CHD[id])}catch(e){delete CHL[id];res(null)}};document.head.appendChild(s)}))}
+const chNote='<div class="pad legend">Point-by-point data: Match Charting Project (Jeff Sackmann and volunteers), CC BY-NC-SA 4.0.</div>';
+const chDates=e=>{const d=s=>new Date(s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)+'T00:00:00Z');return fmtD(d(e.d0))+' – '+fmtD(d(e.d1),true)};
+const chScore=(m,ab)=>{const f=!ab&&m.w===1;return m.sets.map(s=>(f?s[1]:s[0])+'-'+(f?s[0]:s[1])+(s[2]!=null?'('+s[2]+')':'')).join(' ')+(m.ret?' RET':'')};
+const chTitle=m=>`${RESN[m.r]||m.r} · ${m.w===1?m.b:m.a} ${m.w==null?'v':'d.'} ${m.w===1?m.a:m.b}`;
+const pf2=n=>{const p=PL.find(x=>same(x.full,n));return p&&p.c?`<span class="flag">${fl(p.c)}</span> `:''};
+const SHOTN={f:'forehand',b:'backhand',r:'forehand slice',s:'backhand slice',v:'forehand volley',z:'backhand volley',o:'overhead',p:'backhand overhead',u:'forehand drop shot',y:'backhand drop shot',l:'forehand lob',m:'backhand lob',h:'forehand half-volley',i:'backhand half-volley',j:'forehand swinging volley',k:'backhand swinging volley',t:'trick shot',q:'shot'};
+function chApply(st,q){const s=q[0],r=1-s,w=q[5],e=q[7],ss=st[s],sr=st[r],pv={0:0,15:1,30:2,40:3,AD:4},ab=q[4].split('-'),ps=pv[ab[s]],pr=pv[ab[r]];
+  const bp=!(q[2]===6&&q[3]===6)&&ps!=null&&pr!=null&&pr>=3&&pr>ps;
+  ss.f1++;if(q[6]){ss.f1in++;if(w===s)ss.f1w++}else{ss.s2++;if(w===s)ss.s2w++}
+  if(e==='a')ss.ace++;if(e==='d')ss.df++;if(e==='w'||e==='s')st[w].win++;if(e==='u')st[1-w].ue++;
+  st[w].pts++;if(w===r)sr.rw++;if(bp){sr.bp++;if(w===r)sr.bpw++}}
+function chText(m,q){const nm=[m.a.split(' ').slice(1).join(' '),m.b.split(' ').slice(1).join(' ')],s=q[0],w=q[5],n=Math.max(1,Math.floor(q[9].length/2)-1-(q[7]==='w'||q[7]==='a'||q[7]==='s'?1:0)),pre=q[6]?'':'Fault. Second serve: ';
+  if(q[7]==='a')return pre+'Ace by '+nm[s];if(q[7]==='d')return 'Double fault by '+nm[s];if(q[7]==='s')return pre+'Service winner by '+nm[s]+', the return was not made';
+  const hit=n%2?s:1-s,what=q[7]==='w'?'winner':q[7]==='f'?'forced error':q[7]==='u'?'unforced error':'';
+  return pre+nm[w]+' wins the point · '+n+'-shot rally'+(what?' · '+(SHOTN[q[8]]||'shot')+' '+what+' by '+nm[hit]:'')}
+function chStats(m,k){const st=[S0(),S0()];for(let i=0;i<k;i++)chApply(st,m.p[i]);return st}
+function chPlay(m,q){const a=q[9],pts=[];if(a.length<4){$('#rallyinfo').textContent='';return}
+  for(let i=0;i<a.length;i+=2){const out=a[i]<0||a[i]>100;pts.push([a[i],a[i+1],out?pts[pts.length-1][2]:(i/2)%2===0?q[0]:1-q[0]])}
+  $('#rallyinfo').textContent=chText(m,q).replace(/^Fault\. Second serve: /,'');playPath(pts,q[0],a[1])}
+function renderChart(){
+  const m=cm.m,n=m.p.length,k=cm.k,done=k>=n,q=m.p[Math.min(k,n-1)],e=m.e,st=chStats(m,k);
+  const c=$('#court');c.dataset.sf=(e.sf||'').toLowerCase();$('#courtcard').hidden=false;
+  $('#courtnote').textContent='Ball path drawn from the charted shot directions of the real match. Landing spots are approximate, and players are not swapped at changes of ends.';
+  $('#finish').hidden=done;$('#finish').textContent='Skip to the end';$('#restart').textContent='Restart replay';
+  const si=done?m.sets.length:q[1],g=done?null:[q[2],q[3]],pt=done?null:q[4].split('-');
+  const row=(nm,x)=>`<tr><td class="srv">${!done&&q[0]===x?'<span class="ball" title="Serving"></span>':''}</td><td class="nm">${pf2(nm)}${nm}</td>${m.sets.slice(0,si).map(s=>`<td class="set ${s[x]>s[1-x]?'won':''}">${s[x]}${s[2]!=null&&s[x]<s[1-x]?`<sup>${s[2]}</sup>`:''}</td>`).join('')}${g?`<td class="set won">${g[x]}</td><td class="pt">${pt[x]}</td>`:''}</tr>`;
+  $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${e.n} ${e.y} · ${RESN[m.r]||m.r}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">${done?'Final':'Replay'}</span><span class="clock"><span>Point <b>${Math.min(k+1,n)}</b> of ${n}</span></span></div>
+    <div class="scroll"><table>${row(m.a,0)}${row(m.b,1)}</table></div>${done?`<div class="sbfoot">${m.w==null?'Match ended by retirement · ':(m.w?m.b:m.a)+' wins '}${chScore(m)} · ${n} points played</div>`:q[2]===6&&q[3]===6?'<div class="sbfoot">Tiebreak</div>':''}</div>`;
+  const a=st[0],b=st[1];
+  $('#stats').innerHTML=`<div class="heads"><span>${m.a.split(' ').slice(-1)}</span><span>${m.b.split(' ').slice(-1)}</span></div>`+STATS.map((s,i)=>{let va=s[2]?s[2](a):parseFloat(s[1](a))||0,vb=s[2]?s[2](b):parseFloat(s[1](b))||0;const tot=va+vb||1;
+    return `<div class="stat"><div class="top"><b>${s[1](a)}</b><span class="lab">${s[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${s[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${s[1](b)}</b></div><div class="bar"><i style="flex:${va/tot||0.001}"></i><i style="flex:${vb/tot||0.001}"></i></div>${openStat===i?`<div class="def">${s[3]}</div>`:''}</div>`}).join('')+chNote;
+  const lines=[];for(let i=k-1;i>=Math.max(0,k-14);i--){const z=m.p[i];lines.push(`<li><time>#${i+1}</time><span>${chText(m,z)}${z[7]==='w'||z[7]==='a'?' · <em>'+(z[7]==='a'?'Ace':'Winner')+'</em>':''}</span></li>`)}
+  $('#feed').innerHTML=lines.join('')||'<li>Replay ready. Press 1× to start, or it starts on its own.</li>';renderTerms();
+}
+function chStep(){if(!cm||cm.k>=cm.m.p.length)return;const q=cm.m.p[cm.k];cm.k++;renderLive();chPlay(cm.m,q)}
+function openChart(m){lv={kind:'ch',ce:m.e};cm={m,k:0};am=null;openStat=null;go('live');tick()}
+
+/* ---------- live page: event search, match search, archive matches, court ---------- */
+let lv={kind:'demo'},am=null,cm=null;
+const evLabel=()=>lv.kind==='demo'?'Harbor Indoor Open (live demo)':lv.kind==='ch'?lv.ce.n+' '+lv.ce.y+' (point by point)':lv.t.name+' '+lv.t.y;
+const dmLabel=x=>`${roundOf(x.i)} · ${x.p[0]?P[x.p[0]].n:'TBD'} v ${x.p[1]?P[x.p[1]].n:'TBD'}`;
+const mtLabel=()=>cm?chTitle(cm.m):am?`${RESN[am.r]||am.r} · ${am.w.name} d. ${am.l.name}`:lv.kind==='demo'?dmLabel(T[view]):'Choose a match';
+function renderPicker(){const a=document.activeElement;if(a!==$('#lev'))$('#lev').value=evLabel();if(a!==$('#lmt'))$('#lmt').value=mtLabel()}
+function picker(inp,ul,items,pick,restore){
+  let tok=0;
+  const draw=async()=>{const k=++tok;ul.hidden=false;if(!ul.innerHTML)ul.innerHTML='<li class="none">Searching…</li>';const list=(await items(inp.value.trim())).slice(0,80);if(k!==tok)return;ul._l=list;
+    ul.innerHTML=list.length?list.map((it,i)=>`<li role="option" data-i="${i}">${it.html}</li>`).join(''):'<li class="none">Nothing matches that search.</li>'};
+  inp.oninput=draw;inp.onfocus=()=>{inp.value='';draw()};inp.onblur=()=>{tok++;ul.hidden=true;inp.value=restore()};
+  inp.onkeydown=e=>{if(e.key==='Escape')inp.blur();else if(e.key==='Enter'&&ul._l&&ul._l[0]){pick(ul._l[0]);inp.blur()}};
+  ul.onmousedown=e=>{e.preventDefault();const li=e.target.closest('li[data-i]');if(li&&ul._l){pick(ul._l[+li.dataset.i]);inp.blur()}};
+}
+picker($('#lev'),$('#levs'),async q=>{
+  const ym=q.match(/\b(20[0-2]\d)\b/),text=plain(q.replace(/\b20[0-2]\d\b/,'').trim()),out=[];
+  if(!ym&&(!text||'harbor indoor open live demo'.includes(text)))out.push({demo:1,html:'<span>Harbor Indoor Open</span><span class="cc">Live demo</span>'});
+  CH.filter(e=>(!ym||e.y===+ym[1])&&(!text||plain(e.n).includes(text))).forEach(e=>out.push({ce:e,html:`<span>${e.n} ${e.y}</span><span class="cc">${e.c} matches, point by point</span>`}));
+  if(ym||ARCH.season){const d=await loadYear(ym?+ym[1]:ARCH.season);
+    if(d)d.tours.filter(t=>t.lv!=='D'&&(!text||plain(t.name).includes(text))).reverse().forEach(t=>out.push({t,html:`<span>${t.name} ${t.y}</span><span class="cc">${LVN[lvl(t)]} · results</span>`}))}
+  return out},
+  async it=>{cm=null;am=null;if(it.demo){lv={kind:'demo'};view=Math.min(cur,14)}
+    else if(it.ce){lv={kind:'ch',ce:it.ce};const d=await loadCh(it.ce.id);if(d&&lv.ce===it.ce){cm={m:d.ms[0],k:0};tick()}}
+    else{lv={kind:'arch',t:it.t};am=it.t.ms.find(m=>m.r==='F')||it.t.ms[it.t.ms.length-1]}renderLive()},evLabel);
+picker($('#lmt'),$('#lmts'),async q=>{const text=plain(q);
+  if(lv.kind==='demo')return T.filter(x=>!text||plain(dmLabel(x)+' '+(x.p[0]?P[x.p[0]].full:'')+' '+(x.p[1]?P[x.p[1]].full:'')).includes(text)).map(x=>({x,html:`<span>${dmLabel(x)}</span><span class="cc">${statusOf(x)==='live'?'● Live':statusOf(x)==='done'?'Final':'Scheduled'}</span>`}));
+  if(lv.kind==='ch'){const d=await loadCh(lv.ce.id);return d?d.ms.filter(m=>!text||plain(m.r+' '+(RESN[m.r]||'')+' '+m.a+' '+m.b).includes(text)).map(m=>({c:m,html:`<span>${chTitle(m)}</span><span class="cc">${chScore(m)}</span>`})):[]}
+  return lv.t.ms.slice().sort((a,b)=>ordR(b.r)-ordR(a.r)||b.num-a.num).filter(m=>!text||plain(m.r+' '+(RESN[m.r]||'')+' '+m.w.name+' '+m.l.name).includes(text)).map(m=>({m,html:`<span>${m.r} · ${m.w.name} d. ${m.l.name}</span><span class="cc">${m.score}</span>`}))},
+  it=>{openStat=null;if(it.x){view=it.x.i;am=null;cm=null}else if(it.c){cm={m:it.c,k:0};am=null;tick()}else{am=it.m;cm=null}renderLive()},mtLabel);
+{const fin=$('#finish').onclick,res=$('#restart').onclick;
+ $('#finish').onclick=()=>{if(cm){cm.k=cm.m.p.length;renderLive()}else fin()};
+ $('#restart').onclick=()=>{if(cm){cm.k=0;renderLive();tick()}else res()};}
+const ASTATS=[['Aces',0],['Double faults',1],['First serve in',2],['1st serve points won',3],['2nd serve points won',4],['Break points converted',5],['Service points won',-1,'Points won while serving, on first and second serves together.'],['Total points won',9]];
+function renderArch(){
+  const m=am,t=m.t,s=scoreSets(m.score);
+  const row=(o,k)=>`<tr><td class="srv"></td><td class="nm">${o.name}${o.seed?`<small>[${o.seed}]</small>`:''}${o.ioc?`<small>${fl(o.ioc)?`<span class="flag">${fl(o.ioc)}</span> `:''}${o.ioc}</small>`:''}</td>${s.out.map(x=>`<td class="set ${x[k]>x[1-k]?'won':''}">${x[k]}${x[2]!=null&&x[k]<x[1-k]?`<sup>${x[2]}</sup>`:''}</td>`).join('')}</tr>`;
+  $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${t.name} ${t.y} · ${RESN[m.r]||m.r}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">Final</span><span class="clock">${m.min?`<span>Match <b>${clk(m.min*60)}</b></span>`:''}</span></div>
+    <div class="scroll"><table>${row(m.w,0)}${row(m.l,1)}</table></div>
+    <div class="sbfoot">${m.w.name} wins ${m.score}${m.min?' · Total match time '+dur(m.min*60):''}</div></div>`;
+  const a=m.sw,b=m.sl;
+  if(a[2]==null||b[2]==null){$('#stats').innerHTML='<div class="pad sub">No statistics are recorded for this match.</div>'}
+  else{const pc=(x,y)=>y?Math.round(100*x/y)+'%':'–',sv=x=>x[4]+x[5],val=x=>[x[0],x[1],pc(x[3],x[2]),pc(x[4],x[3]),pc(x[5],x[2]-x[3])],
+      o=(x,y)=>[...val(x),(y[7]-y[6])+'/'+y[7],sv(x),sv(x)+(y[2]-sv(y))],num=(x,y)=>[x[0],x[1],x[2]?x[3]/x[2]:0,x[3]?x[4]/x[3]:0,x[2]-x[3]?x[5]/(x[2]-x[3]):0,y[7]?(y[7]-y[6])/y[7]:0,sv(x),sv(x)+(y[2]-sv(y))];
+    const va=o(a,b),vb=o(b,a),na=num(a,b),nb=num(b,a);
+    $('#stats').innerHTML=`<div class="heads"><span>${m.w.name.split(' ').slice(-1)}</span><span>${m.l.name.split(' ').slice(-1)}</span></div>`+ASTATS.map((d,i)=>{const tot=na[i]+nb[i]||1,def=d[2]||STATS[d[1]][3];
+      return `<div class="stat"><div class="top"><b>${va[i]}</b><span class="lab">${d[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${d[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${vb[i]}</b></div><div class="bar"><i style="flex:${na[i]/tot||0.001}"></i><i style="flex:${nb[i]/tot||0.001}"></i></div>${openStat===i?`<div class="def">${def}</div>`:''}</div>`}).join('')+archNote}
+  $('#feed').innerHTML='<li>Point-by-point is not recorded for this match.</li>';renderTerms();
+}
+/* Court view: one canvas redrawn with requestAnimationFrame, so the ball and players move smoothly on phones too.
+   Rally points are landing spots in percent of a 520x250 box (x along the court, y across it).
+   The ball flies in an arc between landing spots, casts a shadow, leaves a short trail, and a dashed line shows where it is heading. */
+const CV=(()=>{
+  const W=520,H=250,el=$('#court'),cv=el.querySelector('canvas'),ctx=cv.getContext('2d');
+  const SURF={hard:['#3b78c4','#2a5d9f'],clay:['#c8683f','#a5522f'],grass:['#4f9a4a','#3b7d39'],carpet:['#3f7f6a','#2e604f']};
+  const PC=['#f6a77d','#d8a0ec'],cl=(v,a,b)=>Math.max(a,Math.min(b,v)),sm=t=>t<=0?0:t>=1?1:t*t*(3-2*t);
+  const IN=(X,Y)=>X>=21&&X<=499&&Y>=41&&Y<=209;
+  let o='h',dpr=1,pw=0,ph=0,raf=0,A=null,ball=null,trail=[],marks=[];
+  const pos=[{x:30,y:90},{x:490,y:160}];
+  try{const v=localStorage.getItem('rl-court');o=v==='h'||v==='v'?v:innerWidth<640?'v':'h'}catch(e){o=innerWidth<640?'v':'h'}
+  const k=()=>o==='h'?pw/W:pw/H;
+  const scr=(X,Y)=>{const s=k();return o==='h'?[X*s,Y*s]:[(H-Y)*s,X*s]};
+  const setT=()=>{const s=k();o==='h'?ctx.setTransform(s,0,0,s,0,0):ctx.setTransform(0,s,-s,0,H*s,0)};
+  function size(){const r=el.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);pw=Math.round(r.width*dpr);ph=Math.round(r.height*dpr);
+    if(pw&&ph&&(cv.width!==pw||cv.height!==ph)){cv.width=pw;cv.height=ph}draw()}
+  function setO(n){o=n;el.classList.toggle('v',o==='v');document.querySelectorAll('#corient button').forEach(b=>b.classList.toggle('on',b.dataset.o===o));size()}
+  function court(){
+    const c=SURF[(el.dataset.sf||'').toLowerCase()]||SURF.hard;setT();
+    ctx.fillStyle=c[1];ctx.fillRect(-2,-2,W+4,H+4);ctx.fillStyle=c[0];ctx.fillRect(22,15,476,220);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(22,15,476,220);ctx.beginPath();
+    [[22,42.4,498,42.4],[22,207.6,498,207.6],[132,42.4,132,207.6],[388,42.4,388,207.6],[132,125,388,125],[22,125,30,125],[498,125,490,125]].forEach(l=>{ctx.moveTo(l[0],l[1]);ctx.lineTo(l[2],l[3])});ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(261,8,4,234);
+    ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=3;ctx.setLineDash([3,2]);ctx.beginPath();ctx.moveTo(260,8);ctx.lineTo(260,242);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#dcdcdc';ctx.fillRect(256.5,3,7,7);ctx.fillRect(256.5,240,7,7);
+  }
+  const at=(K,t)=>{if(t<=K[0].t)return K[0];for(let i=1;i<K.length;i++)if(t<K[i].t){const a=K[i-1],b=K[i],u=sm((t-a.t)/((b.t-a.t)||1));return{x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u}}return K[K.length-1]};
+  function step(now){
+    const t=now-A.t0;pos[0]=at(A.K[0],t);pos[1]=at(A.K[1],t);
+    if(t<A.pre){const p=A.P[0];ball={X:p[0],Y:p[1],h:10+20*sm(t/A.pre),j:-1,u:0};return}
+    const tt=t-A.pre,doneN=Math.min(A.n,Math.floor(tt/A.sT));
+    for(let i=A.marked;i<doneN;i++){const p=A.P[i+1];if(p[0]>=0&&p[0]<=W)marks.push({X:p[0],Y:p[1],t:A.t0+A.pre+(i+1)*A.sT})}
+    A.marked=doneN;
+    if(tt>=A.n*A.sT){const e=A.P[A.n];ball={X:e[0],Y:e[1],h:0,j:-1,u:1};A=null;return}
+    const j=Math.min(A.n-1,Math.floor(tt/A.sT)),u=(tt-j*A.sT)/A.sT,a=A.P[j],c=A.P[j+1],g=A.seg[j];
+    ball={X:a[0]+(c[0]-a[0])*u,Y:a[1]+(c[1]-a[1])*u,h:g.hs*(1-u)+4*g.A*u*(1-u),j,u};
+    trail.push({X:ball.X,Y:ball.Y,h:ball.h,t:now});
+  }
+  function draw(now=performance.now()){
+    if(!pw||!ph)return;const live=A;if(A)step(now);
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,pw,ph);court();
+    marks=marks.filter(m=>now-m.t<1800);
+    for(const m of marks){const a=Math.max(0,1-(now-m.t)/1800),r=4+4*(1-a);ctx.strokeStyle=IN(m.X,m.Y)?`rgba(255,255,255,${a})`:`rgba(255,90,90,${a})`;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(m.X,m.Y,r,0,7);ctx.stroke()}
+    if(live&&ball){const tg=live.P[ball.j+1];
+      if(tg&&tg[0]>=0&&tg[0]<=W){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.4;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(ball.X,ball.Y);ctx.lineTo(tg[0],tg[1]);ctx.stroke();ctx.setLineDash([]);
+        ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.arc(tg[0],tg[1],3.5,0,7);ctx.fill()}}
+    const hitter=live&&ball&&ball.j>=0&&ball.u<.35?(ball.j===0?live.srv:live.P[ball.j][2]):-1;
+    [0,1].forEach(s=>{const p=pos[s];ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(p.x+2,p.y+3,8,8,0,0,7);ctx.fill();
+      if(s===hitter){ctx.strokeStyle=`rgba(255,255,255,${1-ball.u/.35})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,11+10*ball.u,0,7);ctx.stroke()}
+      ctx.fillStyle=PC[s];ctx.beginPath();ctx.arc(p.x,p.y,8,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()});
+    if(ball){const s=k();ctx.setTransform(1,0,0,1,0,0);const g=scr(ball.X,ball.Y),R=Math.max(3*dpr,5*s*(1+ball.h/70));
+      ctx.fillStyle=`rgba(0,0,0,${.38-.22*Math.min(1,ball.h/40)})`;ctx.beginPath();ctx.ellipse(g[0],g[1],R*.95,R*.5,0,0,7);ctx.fill();
+      trail=trail.filter(q=>now-q.t<260);ctx.lineCap='round';
+      for(let i=1;i<trail.length;i++){const q0=trail[i-1],q1=trail[i],p0=scr(q0.X,q0.Y),p1=scr(q1.X,q1.Y),al=Math.max(0,1-(now-q1.t)/260);
+        ctx.strokeStyle=`rgba(225,245,80,${.6*al})`;ctx.lineWidth=R*1.7*al;ctx.beginPath();ctx.moveTo(p0[0],p0[1]-q0.h*s);ctx.lineTo(p1[0],p1[1]-q1.h*s);ctx.stroke()}
+      ctx.fillStyle='#dcf34a';ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=dpr;ctx.beginPath();ctx.arc(g[0],g[1]-ball.h*s,R,0,7);ctx.fill();ctx.stroke()}
+  }
+  function frame(now){raf=0;draw(now);if(A||trail.length||marks.length)raf=requestAnimationFrame(frame)}
+  function play(pts,srv,y0){
+    const now=performance.now();if(A){step(now);A=null}trail=[];
+    const P=pts.map(p=>[p[0]*W/100,p[1]*H/100,p[2]]),n=P.length-1;if(n<1)return;
+    const still=speed>=25||matchMedia('(prefers-reduced-motion: reduce)').matches,r=1-srv;
+    const pre=still?0:380/speed,sT=still?1:Math.min(620,9000/n)/speed;
+    const cp=(s,X,Y)=>({x:cl(X+(s?10:-10),s?W/2+16:4,s?W-4:W/2-16),y:cl(Y,8,H-8)});
+    const K=[[{t:0,...pos[0]}],[{t:0,...pos[1]}]];
+    K[srv].push({t:pre,...cp(srv,P[0][0],P[0][1])});K[r].push({t:pre,...cp(r,r?W-36:36,H-y0*H/100)});
+    for(let i=1;i<=n;i++){const s=P[i][2],net=i===n&&Math.abs(P[i][0]-W/2)<8;if(!net&&(s===0||s===1))K[s].push({t:pre+i*sT,...cp(s,P[i][0],P[i][1])})}
+    const seg=[];for(let j=0;j<n;j++){const a=P[j],b=P[j+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]),net=j===n-1&&Math.abs(b[0]-W/2)<8;
+      seg.push({hs:j===0?30:0,A:j===0?4:net?6:Math.min(34,8+L*.07)})}
+    A={P,K,seg,t0:now,pre,sT,n,srv,marked:0};
+    if(still){step(now+pre+n*sT+1);marks=[];draw(now);return}
+    if(!raf)raf=requestAnimationFrame(frame);
+  }
+  document.querySelector('#corient').onclick=e=>{const b=e.target.closest('button');if(b){setO(b.dataset.o);try{localStorage.setItem('rl-court',o)}catch(e2){}}};
+  if(window.ResizeObserver)new ResizeObserver(size).observe(el);else addEventListener('resize',size);
+  setO(o);
+  return{play,draw,left:()=>A?Math.max(0,A.t0+A.pre+A.n*A.sT-performance.now()):0};
+})();
+function playPath(pts,srv,y0){CV.play(pts,srv,y0)}
+function animateRally(m){
+  const L=m.last,el=$('#court');if(!L||$('#courtcard').hidden)return;
+  const r=Math.random,bx=s=>s?93:7;
+  let hit=L.srv,y=(m.pts[0]+m.pts[1])%2?64:36;const pts=[[bx(hit),y,hit]],n=Math.max(1,L.shots);
+  for(let i=1;i<=n;i++){const to=1-hit,last=i===n;let x,yy=22+r()*56;
+    if(last&&L.kind==='df'){x=50;yy=y}
+    else if(last&&L.err){if(r()<.35){x=50}else{x=to?99:1;yy=r()<.5?5:95}}
+    else if(i===1){x=to?68:32;yy=y<50?58+r()*14:28+r()*14}
+    else x=to?76+r()*14:10+r()*14;
+    pts.push([x,yy,to]);hit=to}
+  if(!L.err){const e=pts[pts.length-1];pts.push([e[2]?101:-1,e[1]+(r()-.5)*20,e[2]])}
+  $('#rallyinfo').textContent=(L.kind==='ace'?'Ace':L.kind==='df'?'Double fault':L.shots+'-shot rally')+' · '+P[m.p[L.w]].n+' wins the point'+(m.rn?' · longest rally '+m.rmax+', average '+(m.rs/m.rn).toFixed(1):'');
+  playPath(pts,L.srv,y);
+}
+/* ---------- tabs ---------- */
+let tab='home';
+const TABS=['home','event','live','players','rankings','h2h','compare','tournaments','map'];
+function show(t,keep){
+  AM.length=0;
+  tab=TABS.includes(t)?t:'home';
+  TABS.forEach(x=>{$('#v-'+x).hidden=x!==tab});
+  document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+tab));
+  if(tab==='event')renderEvent(); if(tab==='live'){renderPicker();renderLive();if(cm)tick()}
+  if(tab==='players'&&!keep){$('#pdetail').hidden=true;$('#plist').hidden=false;renderPlayers()}
+  if(tab==='rankings'){renderRankings();renderScores()}
+  if(tab==='tournaments')renderTour();
+  if(tab==='compare')renderCompare();
+  if(tab==='map')renderMap();
+  if(tab==='home')renderHome();
+  if(tab==='h2h')renderH2H();
+}
+function go(t){show(t);window.scrollTo(0,0);try{history.replaceState(null,'','#'+t)}catch(e){try{location.hash=t}catch(e2){}}}
+document.querySelector('nav').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();const t=a.getAttribute('href').slice(1);if(t==='event')ev={mode:'list'};go(t)});
+window.addEventListener('hashchange',()=>{const t=location.hash.slice(1);if(t!==tab)show(t)});
+initEvent();renderPicker();paintTheme();show(location.hash.slice(1));tick();
+</script>
