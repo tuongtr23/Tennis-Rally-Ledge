@@ -223,6 +223,7 @@ table.act tr.evh td{background:var(--bg);border-top:2px solid var(--line)}
 .court canvas{display:block;width:100%;height:100%}
 .cthead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
 .seg.sm button{padding:4px 10px;font-size:13px}
+.simrow{margin-top:10px;gap:10px;align-items:center}
 
 /* ---------- Design looks: IBM Carbon, GitHub Primer, Microsoft Fluent 2 ---------- */
 :root[data-look] *{letter-spacing:normal!important;text-transform:none!important}
@@ -295,7 +296,7 @@ table.act tr.evh td{background:var(--bg);border-top:2px solid var(--line)}
 
 <section id="v-live" hidden>
   <div><h1>Match observation</h1>
-  <p class="sub">Choose an event, then a match. Real matches from the Match Charting Project replay point by point with a court view and running statistics. The Harbor Indoor Open is a simulated live demo.</p></div>
+  <p class="sub">Choose an event, then a match. Real matches from the Match Charting Project replay point by point with a court view and running statistics. Any other match since 2010 can be watched as a simulated live match that ends at its real final score: type a year to list that season's events. The Harbor Indoor Open is a simulated live demo.</p></div>
   <div class="row">
     <div class="finder"><input type="search" id="lev" placeholder="Search an event, e.g. Wimbledon 2019" autocomplete="off" aria-label="Choose an event"><ul class="sug" id="levs" role="listbox" hidden></ul></div>
     <div class="finder"><input type="search" id="lmt" placeholder="Search a match or player" autocomplete="off" aria-label="Choose a match"><ul class="sug" id="lmts" role="listbox" hidden></ul></div>
@@ -1204,26 +1205,73 @@ function chText(m,q){const nm=[m.a.split(' ').slice(1).join(' '),m.b.split(' ').
   return pre+nm[w]+' wins the point · '+n+'-shot rally'+(what?' · '+(SHOTN[q[8]]||'shot')+' '+what+' by '+nm[hit]:'')}
 function chStats(m,k){const st=[S0(),S0()];for(let i=0;i<k;i++)chApply(st,m.p[i]);return st}
 function chPlay(m,q){const a=q[9],pts=[];if(a.length<4){$('#rallyinfo').textContent='';return}
-  for(let i=0;i<a.length;i+=2){const out=a[i]<0||a[i]>100;pts.push([a[i],a[i+1],out?pts[pts.length-1][2]:(i/2)%2===0?q[0]:1-q[0]])}
-  $('#rallyinfo').textContent=chText(m,q).replace(/^Fault\. Second serve: /,'');playPath(pts,q[0],a[1])}
+  const fl=q[0]===1;for(let i=0;i<a.length;i+=2)pts.push(fl?[100-a[i],100-a[i+1]]:[a[i],a[i+1]])
+  $('#rallyinfo').textContent=chText(m,q).replace(/^Fault\. Second serve: /,'');playPath(pts,q[0],pts[0][1],/[was]/.test(q[7]))}
 function renderChart(){
   const m=cm.m,n=m.p.length,k=cm.k,done=k>=n,q=m.p[Math.min(k,n-1)],e=m.e,st=chStats(m,k);
   const c=$('#court');c.dataset.sf=(e.sf||'').toLowerCase();$('#courtcard').hidden=false;
-  $('#courtnote').textContent='Ball path drawn from the charted shot directions of the real match. Landing spots are approximate, and players are not swapped at changes of ends.';
+  $('#courtnote').textContent=m.sim?'Simulated match: the final score is real; the order of points, the rallies and the statistics shown are generated. Players are not swapped at changes of ends.':'Ball path drawn from the charted shot directions of the real match. Landing spots are approximate, and players are not swapped at changes of ends.';
   $('#finish').hidden=done;$('#finish').textContent='Skip to the end';$('#restart').textContent='Restart replay';
   const si=done?m.sets.length:q[1],g=done?null:[q[2],q[3]],pt=done?null:q[4].split('-');
   const row=(nm,x)=>`<tr><td class="srv">${!done&&q[0]===x?'<span class="ball" title="Serving"></span>':''}</td><td class="nm">${pf2(nm)}${nm}</td>${m.sets.slice(0,si).map(s=>`<td class="set ${s[x]>s[1-x]?'won':''}">${s[x]}${s[2]!=null&&s[x]<s[1-x]?`<sup>${s[2]}</sup>`:''}</td>`).join('')}${g?`<td class="set won">${g[x]}</td><td class="pt">${pt[x]}</td>`:''}</tr>`;
-  $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${e.n} ${e.y} · ${RESN[m.r]||m.r}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">${done?'Final':'Replay'}</span><span class="clock"><span>Point <b>${Math.min(k+1,n)}</b> of ${n}</span></span></div>
+  $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${e.n} ${e.y} · ${RESN[m.r]||m.r}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">${done?'Final':m.sim?'Simulated':'Replay'}</span><span class="clock"><span>Point <b>${Math.min(k+1,n)}</b> of ${n}</span></span></div>
     <div class="scroll"><table>${row(m.a,0)}${row(m.b,1)}</table></div>${done?`<div class="sbfoot">${m.w==null?'Match ended by retirement · ':(m.w?m.b:m.a)+' wins '}${chScore(m)} · ${n} points played</div>`:q[2]===6&&q[3]===6?'<div class="sbfoot">Tiebreak</div>':''}</div>`;
   const a=st[0],b=st[1];
   $('#stats').innerHTML=`<div class="heads"><span>${m.a.split(' ').slice(-1)}</span><span>${m.b.split(' ').slice(-1)}</span></div>`+STATS.map((s,i)=>{let va=s[2]?s[2](a):parseFloat(s[1](a))||0,vb=s[2]?s[2](b):parseFloat(s[1](b))||0;const tot=va+vb||1;
-    return `<div class="stat"><div class="top"><b>${s[1](a)}</b><span class="lab">${s[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${s[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${s[1](b)}</b></div><div class="bar"><i style="flex:${va/tot||0.001}"></i><i style="flex:${vb/tot||0.001}"></i></div>${openStat===i?`<div class="def">${s[3]}</div>`:''}</div>`}).join('')+chNote;
+    return `<div class="stat"><div class="top"><b>${s[1](a)}</b><span class="lab">${s[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${s[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${s[1](b)}</b></div><div class="bar"><i style="flex:${va/tot||0.001}"></i><i style="flex:${vb/tot||0.001}"></i></div>${openStat===i?`<div class="def">${s[3]}</div>`:''}</div>`}).join('')+(m.sim?'<div class="pad legend">Final score: Tennismylife (TML) ATP database. Points, rallies and statistics are simulated'+(m.simSt?' and follow the real serve statistics of this match':'')+'.</div>':chNote);
   const lines=[];for(let i=k-1;i>=Math.max(0,k-14);i--){const z=m.p[i];lines.push(`<li><time>#${i+1}</time><span>${chText(m,z)}${z[7]==='w'||z[7]==='a'?' · <em>'+(z[7]==='a'?'Ace':'Winner')+'</em>':''}</span></li>`)}
   $('#feed').innerHTML=lines.join('')||'<li>Replay ready. Press 1× to start, or it starts on its own.</li>';renderTerms();
 }
 function chStep(){if(!cm||cm.k>=cm.m.p.length)return;const q=cm.m.p[cm.k];cm.k++;renderLive();chPlay(cm.m,q)}
 function openChart(m){lv={kind:'ch',ce:m.e};cm={m,k:0};am=null;openStat=null;go('live');tick()}
 
+/* ---------- simulated point-by-point for any recorded match ----------
+   The final score (sets, games, tiebreak points) is real. The order of games and points, the rallies and the
+   per-point details are generated, using the match's real serve statistics when they are recorded. */
+function simOK(m){const s=scoreSets(m.score);return !s.tag&&s.out.length>0&&s.out.every(x=>{const h=Math.max(x[0],x[1]),l=Math.min(x[0],x[1]);return x[2]!=null?h===l+1:(h===6&&l<=4)||(h===7&&l>=5)||(h>7&&h-l===2)})}
+function simMatch(am){
+  const t=am.t,s=scoreSets(am.score).out,h=[...(am.w.name+am.l.name+am.score+t.id)].reduce((a,c)=>Math.imul(a^c.charCodeAt(0),16777619)>>>0,2166136261),rnd=mulberry(h);
+  const pk=(a)=>a[Math.floor(rnd()*a.length)];
+  const rate=(x,i,j,d)=>x&&x[j]?Math.min(.97,Math.max(.03,x[i]/x[j])):d;
+  const SV=[am.sw,am.sl].map(x=>{const ok=x&&x[2]!=null&&x[2]>0,v=ok?x:null,won=ok?x[4]+x[5]:0,lost=ok?x[2]-won:0;
+    return{f:rate(v,3,2,.62),p1:v&&v[3]?rate(v,4,3,.72):.72,p2:v&&x[2]-x[3]>0?Math.min(.95,Math.max(.05,x[5]/(x[2]-x[3]))):.52,ace:ok&&won?Math.min(.35,x[0]/won):.1,df:ok&&lost?Math.min(.35,x[1]/lost):.07}});
+  // order of games/points that ends exactly at the real score without ending early
+  function order(nw,nl,ended){for(let tries=0;tries<60;tries++){let a=0,b=0,q=[],ok=true;
+      while(a<nw||b<nl){const can=[];if(a<nw&&!ended(a+1,b))can.push(0);if(b<nl&&!ended(a,b+1))can.push(1);
+        if(!can.length){ok=false;break}const c=can.length===2?(rnd()<(nw-a)/(nw-a+nl-b)?0:1):can[0];c?b++:a++;q.push(c)}
+      if(ok)return q}const q=[];for(let i=0;i<Math.max(nw,nl);i++){if(i<nl)q.push(1);if(i<nw)q.push(0)}return q}
+  const gameSeq=()=>{const r=rnd(),l=r<.25?0:r<.55?1:r<.78?2:3+Math.floor(-Math.log(1-rnd())*.8);
+    if(l<=2)return [...order(3,l,()=>false),0];const q=[...order(3,3,()=>false)];for(let i=3;i<l;i++)q.push(...(rnd()<.5?[0,1]:[1,0]));return [...q,0,0]};
+  const tbSeq=(l,to)=>{if(l<=to-2)return [...order(to-1,l,()=>false),0];const q=[...order(to-1,to-1,()=>false)];for(let i=to-1;i<l;i++)q.push(...(rnd()<.5?[0,1]:[1,0]));return [...q,0,0]};
+  const PTN=['0','15','30','40'],gs=(a,b)=>a>=3&&b>=3?(a===b?['40','40']:a>b?['AD','40']:['40','AD']):[PTN[a],PTN[b]];
+  const ys=(lo,hi)=>lo+rnd()*(hi-lo);
+  function rally(srv,w,deuce){            // coordinates with the server on the left, like charted data
+    const sy=deuce?62:38,c=[5,sy],r=1-srv,won=w===srv,st=SV[srv];
+    let first=rnd()<(won?st.f*st.p1/(st.f*st.p1+(1-st.f)*st.p2):st.f*(1-st.p1)/(st.f*(1-st.p1)+(1-st.f)*(1-st.p2)))?1:0,end,shot='f';
+    const box=()=>[ys(58,72),sy>50?ys(26,47):ys(53,74)];
+    if(!won&&rnd()<st.df){first=0;const e=rnd();c.push(...(e<.45?[50,sy>50?ys(30,45):ys(55,70)]:e<.8?[ys(76,82),sy>50?ys(30,46):ys(54,70)]:[ys(62,72),sy>50?ys(10,15):ys(85,90)]));return{c,first,end:'d',shot:'q'}}
+    if(won&&rnd()<st.ace){c.push(...box(),104,sy>50?ys(0,30):ys(70,100));return{c,first,end:'a',shot:'q'}}
+    if(won&&rnd()<.07){c.push(...box(),104,ys(20,80));return{c,first,end:'s',shot:'q'}}
+    const e=rnd();end=e<.36?'w':e<.7?'u':'f';
+    let n=2+Math.floor(-Math.log(1-rnd())*2.8);const lastBy=end==='w'?w:1-w;if(((n%2)?srv:r)!==lastBy)n++;if(n>21)n-=2;
+    c.push(...box());
+    for(let k=2;k<n;k++){const toRight=k%2===1;c.push(toRight?ys(76,95):ys(5,24),ys(20,80))}
+    const toRight=n%2===1;
+    if(end==='w'){const y=pk([ys(18,30),ys(70,82),ys(30,70)]);c.push(toRight?ys(72,94):ys(6,28),y,toRight?104:-4,y+(rnd()-.5)*30);shot=pk('ffffbbbvvzou')}
+    else{const x=rnd();c.push(...(x<.35?[50,ys(25,75)]:x<.7?[toRight?ys(101,106):ys(-6,-1),ys(25,75)]:[toRight?ys(70,92):ys(8,30),pk([ys(9,15),ys(85,91)])]));shot=pk('ffffbbbbrsvzu')}
+    return{c,first,end,shot}}
+  const p=[],sets=[];let srv=rnd()<.5?0:1;
+  s.forEach((x,si)=>{const sw=x[0]>x[1]?0:1,gw=Math.max(x[0],x[1]),gl=Math.min(x[0],x[1]),tbAt=x[2]!=null?gl:null,fin=si===s.length-1;
+    const ended=(a,b)=>(a>=6||b>=6)&&Math.abs(a-b)>=2;
+    const games=(tbAt!=null?order(tbAt,tbAt,ended):[...order(gw-1,gl,ended),0]).map(v=>v?1-sw:sw);
+    let ga=0,gb=0;
+    const play=(seq,isTb)=>{let pa=0,pb=0;seq.forEach((w,i)=>{const sv=isTb?(i===0?srv:(Math.floor((i+1)/2)%2===0?srv:1-srv)):srv,R=rally(sv,w,(pa+pb)%2===0);
+        p.push([sv,si,ga,gb,isTb?pa+'-'+pb:gs(pa,pb).join('-'),w,R.first,R.end,R.shot,R.c.map(v=>Math.round(v))]);w?pb++:pa++})};
+    games.forEach(w=>{play(gameSeq().map(v=>v?1-w:w),false);w?gb++:ga++;srv=1-srv});
+    if(tbAt!=null){const to=fin&&t.lv==='G'&&t.y>=2022&&tbAt===6&&s.length===5?10:7;play(tbSeq(x[2],to).map(v=>v?1-sw:sw),true);sw?gb++:ga++;srv=1-srv}
+    sets.push([x[0],x[1],x[2]])});
+  return{a:am.w.name,b:am.l.name,r:am.r,sets,w:0,ret:false,sim:1,simSt:!!(am.sw&&am.sw[2]!=null&&am.sw[2]>0),p,e:{n:t.name,y:t.y,sf:(t.sf||'').replace(/\s*\(indoor\)/,'').replace('–','')}};
+}
 /* ---------- live page: event search, match search, archive matches, court ---------- */
 let lv={kind:'demo'},am=null,cm=null;
 const evLabel=()=>lv.kind==='demo'?'Harbor Indoor Open (live demo)':lv.kind==='ch'?lv.ce.n+' '+lv.ce.y+' (point by point)':lv.t.name+' '+lv.t.y;
@@ -1243,7 +1291,7 @@ picker($('#lev'),$('#levs'),async q=>{
   if(!ym&&(!text||'harbor indoor open live demo'.includes(text)))out.push({demo:1,html:'<span>Harbor Indoor Open</span><span class="cc">Live demo</span>'});
   CH.filter(e=>(!ym||e.y===+ym[1])&&(!text||plain(e.n).includes(text))).forEach(e=>out.push({ce:e,html:`<span>${e.n} ${e.y}</span><span class="cc">${e.c} matches, point by point</span>`}));
   if(ym||ARCH.season){const d=await loadYear(ym?+ym[1]:ARCH.season);
-    if(d)d.tours.filter(t=>t.lv!=='D'&&(!text||plain(t.name).includes(text))).reverse().forEach(t=>out.push({t,html:`<span>${t.name} ${t.y}</span><span class="cc">${LVN[lvl(t)]} · results</span>`}))}
+    if(d)d.tours.filter(t=>t.lv!=='D'&&(!text||plain(t.name).includes(text))).reverse().forEach(t=>out.push({t,html:`<span>${t.name} ${t.y}</span><span class="cc">${LVN[lvl(t)]} · results, simulated live</span>`}))}
   return out},
   async it=>{cm=null;am=null;if(it.demo){lv={kind:'demo'};view=Math.min(cur,14)}
     else if(it.ce){lv={kind:'ch',ce:it.ce};const d=await loadCh(it.ce.id);if(d&&lv.ce===it.ce){cm={m:d.ms[0],k:0};tick()}}
@@ -1262,7 +1310,8 @@ function renderArch(){
   const row=(o,k)=>`<tr><td class="srv"></td><td class="nm">${o.name}${o.seed?`<small>[${o.seed}]</small>`:''}${o.ioc?`<small>${fl(o.ioc)?`<span class="flag">${fl(o.ioc)}</span> `:''}${o.ioc}</small>`:''}</td>${s.out.map(x=>`<td class="set ${x[k]>x[1-k]?'won':''}">${x[k]}${x[2]!=null&&x[k]<x[1-k]?`<sup>${x[2]}</sup>`:''}</td>`).join('')}</tr>`;
   $('#board').innerHTML=`<div class="sb"><div class="sbtop"><span>${t.name} ${t.y} · ${RESN[m.r]||m.r}</span><span class="pill" style="color:inherit;border-color:rgba(255,255,255,.4)">Final</span><span class="clock">${m.min?`<span>Match <b>${clk(m.min*60)}</b></span>`:''}</span></div>
     <div class="scroll"><table>${row(m.w,0)}${row(m.l,1)}</table></div>
-    <div class="sbfoot">${m.w.name} wins ${m.score}${m.min?' · Total match time '+dur(m.min*60):''}</div></div>`;
+    <div class="sbfoot">${m.w.name} wins ${m.score}${m.min?' · Total match time '+dur(m.min*60):''}</div></div>${simOK(m)?'<div class="row simrow"><button class="btn" id="simgo" type="button">Watch it live (simulated)</button><span class="sub">Real final score, simulated points and court view</span></div>':''}`;
+  if($('#simgo'))$('#simgo').onclick=()=>{cm={m:simMatch(m),k:0};am=null;openStat=null;renderLive();tick()};
   const a=m.sw,b=m.sl;
   if(a[2]==null||b[2]==null){$('#stats').innerHTML='<div class="pad sub">No statistics are recorded for this match.</div>'}
   else{const pc=(x,y)=>y?Math.round(100*x/y)+'%':'–',sv=x=>x[4]+x[5],val=x=>[x[0],x[1],pc(x[3],x[2]),pc(x[4],x[3]),pc(x[5],x[2]-x[3])],
@@ -1270,7 +1319,7 @@ function renderArch(){
     const va=o(a,b),vb=o(b,a),na=num(a,b),nb=num(b,a);
     $('#stats').innerHTML=`<div class="heads"><span>${m.w.name.split(' ').slice(-1)}</span><span>${m.l.name.split(' ').slice(-1)}</span></div>`+ASTATS.map((d,i)=>{const tot=na[i]+nb[i]||1,def=d[2]||STATS[d[1]][3];
       return `<div class="stat"><div class="top"><b>${va[i]}</b><span class="lab">${d[0]}<button class="ib ${openStat===i?'on':''}" data-i="${i}" aria-label="What does ${d[0]} mean?" aria-expanded="${openStat===i}">i</button></span><b>${vb[i]}</b></div><div class="bar"><i style="flex:${na[i]/tot||0.001}"></i><i style="flex:${nb[i]/tot||0.001}"></i></div>${openStat===i?`<div class="def">${def}</div>`:''}</div>`}).join('')+archNote}
-  $('#feed').innerHTML='<li>Point-by-point is not recorded for this match.</li>';renderTerms();
+  $('#feed').innerHTML='<li>Point-by-point is not recorded for this match.'+(simOK(m)?' Use “Watch it live (simulated)” to follow it point by point.':'')+'</li>';renderTerms();
 }
 /* Court view: one canvas redrawn with requestAnimationFrame, so the ball and players move smoothly on phones too.
    Rally points are landing spots in percent of a 520x250 box (x along the court, y across it).
@@ -1280,7 +1329,7 @@ const CV=(()=>{
   const SURF={hard:['#3b78c4','#2a5d9f'],clay:['#c8683f','#a5522f'],grass:['#4f9a4a','#3b7d39'],carpet:['#3f7f6a','#2e604f']};
   const PC=['#f6a77d','#d8a0ec'],cl=(v,a,b)=>Math.max(a,Math.min(b,v)),sm=t=>t<=0?0:t>=1?1:t*t*(3-2*t);
   const IN=(X,Y)=>X>=21&&X<=499&&Y>=41&&Y<=209;
-  let o='h',dpr=1,pw=0,ph=0,raf=0,A=null,ball=null,trail=[],marks=[];
+  let o='h',dpr=1,pw=0,ph=0,raf=0,A=null,ball=null,ring=null,trail=[],marks=[];
   const pos=[{x:30,y:90},{x:490,y:160}];
   try{const v=localStorage.getItem('rl-court');o=v==='h'||v==='v'?v:innerWidth<640?'v':'h'}catch(e){o=innerWidth<640?'v':'h'}
   const k=()=>o==='h'?pw/W:pw/H;
@@ -1299,15 +1348,16 @@ const CV=(()=>{
     ctx.fillStyle='#dcdcdc';ctx.fillRect(256.5,3,7,7);ctx.fillRect(256.5,240,7,7);
   }
   const at=(K,t)=>{if(t<=K[0].t)return K[0];for(let i=1;i<K.length;i++)if(t<K[i].t){const a=K[i-1],b=K[i],u=sm((t-a.t)/((b.t-a.t)||1));return{x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u}}return K[K.length-1]};
+  // One rally = a chain of legs: contact -> bounce (flight), bounce -> next player's contact (after the bounce).
   function step(now){
     const t=now-A.t0;pos[0]=at(A.K[0],t);pos[1]=at(A.K[1],t);
-    if(t<A.pre){const p=A.P[0];ball={X:p[0],Y:p[1],h:10+20*sm(t/A.pre),j:-1,u:0};return}
-    const tt=t-A.pre,doneN=Math.min(A.n,Math.floor(tt/A.sT));
-    for(let i=A.marked;i<doneN;i++){const p=A.P[i+1];if(p[0]>=0&&p[0]<=W)marks.push({X:p[0],Y:p[1],t:A.t0+A.pre+(i+1)*A.sT})}
-    A.marked=doneN;
-    if(tt>=A.n*A.sT){const e=A.P[A.n];ball={X:e[0],Y:e[1],h:0,j:-1,u:1};A=null;return}
-    const j=Math.min(A.n-1,Math.floor(tt/A.sT)),u=(tt-j*A.sT)/A.sT,a=A.P[j],c=A.P[j+1],g=A.seg[j];
-    ball={X:a[0]+(c[0]-a[0])*u,Y:a[1]+(c[1]-a[1])*u,h:g.hs*(1-u)+4*g.A*u*(1-u),j,u};
+    const hs=A.hits.filter(h=>h.t<=t),hl=hs[hs.length-1];
+    ring=hl&&t-hl.t<A.sT*.35?{s:hl.s,u:(t-hl.t)/(A.sT*.35)}:null;
+    if(t<A.pre){const p=A.S;ball={X:p[0],Y:p[1],h:10+20*sm(t/A.pre),tg:A.legs[0].b};return}
+    for(const g of A.legs)if(g.mk&&!g.done&&t>=g.t1){g.done=1;if(g.b[0]>=0&&g.b[0]<=W)marks.push({X:g.b[0],Y:g.b[1],t:A.t0+g.t1})}
+    if(t>=A.total){const g=A.legs[A.legs.length-1];ball={X:g.b[0],Y:g.b[1],h:0,tg:null};A=null;ring=null;return}
+    const g=A.legs.find(g=>t<g.t1)||A.legs[A.legs.length-1],u=cl((t-g.t0)/((g.t1-g.t0)||1),0,1);
+    ball={X:g.a[0]+(g.b[0]-g.a[0])*u,Y:g.a[1]+(g.b[1]-g.a[1])*u,h:g.h0*(1-u)+g.h1*u+4*g.A*u*(1-u),tg:g.b};
     trail.push({X:ball.X,Y:ball.Y,h:ball.h,t:now});
   }
   function draw(now=performance.now()){
@@ -1315,12 +1365,11 @@ const CV=(()=>{
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,pw,ph);court();
     marks=marks.filter(m=>now-m.t<1800);
     for(const m of marks){const a=Math.max(0,1-(now-m.t)/1800),r=4+4*(1-a);ctx.strokeStyle=IN(m.X,m.Y)?`rgba(255,255,255,${a})`:`rgba(255,90,90,${a})`;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(m.X,m.Y,r,0,7);ctx.stroke()}
-    if(live&&ball){const tg=live.P[ball.j+1];
-      if(tg&&tg[0]>=0&&tg[0]<=W){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.4;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(ball.X,ball.Y);ctx.lineTo(tg[0],tg[1]);ctx.stroke();ctx.setLineDash([]);
+    if(live&&ball&&ball.tg){const tg=ball.tg;
+      if(tg[0]>=0&&tg[0]<=W){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.4;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(ball.X,ball.Y);ctx.lineTo(tg[0],tg[1]);ctx.stroke();ctx.setLineDash([]);
         ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.arc(tg[0],tg[1],3.5,0,7);ctx.fill()}}
-    const hitter=live&&ball&&ball.j>=0&&ball.u<.35?(ball.j===0?live.srv:live.P[ball.j][2]):-1;
     [0,1].forEach(s=>{const p=pos[s];ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(p.x+2,p.y+3,8,8,0,0,7);ctx.fill();
-      if(s===hitter){ctx.strokeStyle=`rgba(255,255,255,${1-ball.u/.35})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,11+10*ball.u,0,7);ctx.stroke()}
+      if(live&&ring&&ring.s===s){ctx.strokeStyle=`rgba(255,255,255,${1-ring.u})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,11+10*ring.u,0,7);ctx.stroke()}
       ctx.fillStyle=PC[s];ctx.beginPath();ctx.arc(p.x,p.y,8,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()});
     if(ball){const s=k();ctx.setTransform(1,0,0,1,0,0);const g=scr(ball.X,ball.Y),R=Math.max(3*dpr,5*s*(1+ball.h/70));
       ctx.fillStyle=`rgba(0,0,0,${.38-.22*Math.min(1,ball.h/40)})`;ctx.beginPath();ctx.ellipse(g[0],g[1],R*.95,R*.5,0,0,7);ctx.fill();
@@ -1330,27 +1379,50 @@ const CV=(()=>{
       ctx.fillStyle='#dcf34a';ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=dpr;ctx.beginPath();ctx.arc(g[0],g[1]-ball.h*s,R,0,7);ctx.fill();ctx.stroke()}
   }
   function frame(now){raf=0;draw(now);if(A||trail.length||marks.length)raf=requestAnimationFrame(frame)}
-  function play(pts,srv,y0){
+  /* pts: [server position, landing spot of shot 1, landing spot of shot 2, ...] in percent (x along the court, y across).
+     win: the point ended with a ball the opponent could not reach (ace, service winner, winner); the last entry then
+     only gives the direction the ball kept travelling. Otherwise the last landing spot is the error (net or out). */
+  function play(pts,srv,y0,win){
     const now=performance.now();if(A){step(now);A=null}trail=[];
-    const P=pts.map(p=>[p[0]*W/100,p[1]*H/100,p[2]]),n=P.length-1;if(n<1)return;
+    const P=pts.map(p=>[p[0]*W/100,p[1]*H/100]);let n=P.length-1;if(n<1)return;
+    let m=win?n-1:n;if(m<1){m=n;win=false}
     const still=speed>=25||matchMedia('(prefers-reduced-motion: reduce)').matches,r=1-srv;
-    const pre=still?0:380/speed,sT=still?1:Math.min(620,9000/n)/speed;
-    const cp=(s,X,Y)=>({x:cl(X+(s?10:-10),s?W/2+16:4,s?W-4:W/2-16),y:cl(Y,8,H-8)});
+    const sp=Math.max(1,speed),pre=still?0:380/sp,sT=still?1:Math.min(640,9000/m)/sp,f1=sT*.6;
+    const hitBy=k=>k%2?srv:r;                       // shot k (1-based) is struck by the server when k is odd
+    const side=(s,p)=>({x:cl(p[0],s?W/2+34:4,s?W-4:W/2-34),y:cl(p[1],6,H-6)});
+    const unit=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;return[dx/L,dy/L]};
+    const base=s=>s?W-30:30,rec=(s,c)=>({x:c.x+(base(s)-c.x)*.5,y:c.y+(H/2-c.y)*.55});
+    const S=P[0],B=P.slice(1,m+1),C=[{x:S[0],y:S[1]}];   // C[k] = contact point of shot k+1
+    for(let k=1;k<m;k++){const d=unit([C[k-1].x,C[k-1].y],B[k-1]),e=k===1?72:46;C.push(side(hitBy(k+1),[B[k-1][0]+d[0]*e,B[k-1][1]+d[1]*e]))}
+    const Ts=k=>pre+(k-1)*sT,legs=[],hits=[];
     const K=[[{t:0,...pos[0]}],[{t:0,...pos[1]}]];
-    K[srv].push({t:pre,...cp(srv,P[0][0],P[0][1])});K[r].push({t:pre,...cp(r,r?W-36:36,H-y0*H/100)});
-    for(let i=1;i<=n;i++){const s=P[i][2],net=i===n&&Math.abs(P[i][0]-W/2)<8;if(!net&&(s===0||s===1))K[s].push({t:pre+i*sT,...cp(s,P[i][0],P[i][1])})}
-    const seg=[];for(let j=0;j<n;j++){const a=P[j],b=P[j+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]),net=j===n-1&&Math.abs(b[0]-W/2)<8;
-      seg.push({hs:j===0?30:0,A:j===0?4:net?6:Math.min(34,8+L*.07)})}
-    A={P,K,seg,t0:now,pre,sT,n,srv,marked:0};
-    if(still){step(now+pre+n*sT+1);marks=[];draw(now);return}
+    K[srv].push({t:pre,x:S[0],y:S[1]});K[r].push({t:pre,...side(r,[base(r),H-y0*H/100])});
+    for(let k=1;k<=m;k++){
+      const a=[C[k-1].x,C[k-1].y],b=B[k-1],last=k===m,net=last&&!win&&Math.abs(b[0]-W/2)<8,L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      const t0=Ts(k),s=hitBy(k),o=1-s;hits.push({t:t0,s});
+      legs.push({a,b,t0,t1:t0+f1,h0:k===1?30:8,h1:0,A:k===1?4:net?5:Math.min(30,8+L*.06),mk:!net});
+      if(k>1)K[s].push({t:t0,x:a[0],y:a[1]});                        // hitter is at the contact point when the ball arrives
+      if(!last){const c=C[k];legs.push({a:b,b:[c.x,c.y],t0:t0+f1,t1:Ts(k+1),h0:0,h1:8,A:9});
+        K[s].push({t:Ts(k+1),...rec(s,{x:a[0],y:a[1]})});continue}     // and recovers while the opponent hits
+      const d=unit(a,b);K[s].push({t:t0+sT,...rec(s,{x:a[0],y:a[1]})});
+      const reach=side(o,[b[0]+d[0]*46,b[1]+d[1]*46]),from=at(K[o],t0);
+      if(win){const e=P[n],dd=unit(b,Math.hypot(e[0]-b[0],e[1]-b[1])>4?e:[b[0]+d[0],b[1]+d[1]]);
+        legs.push({a:b,b:[b[0]+dd[0]*120,b[1]+dd[1]*120],t0:t0+f1,t1:t0+f1+sT*.7,h0:0,h1:6,A:10});
+        K[o].push({t:t0+f1+sT*.45,x:from.x+(reach.x-from.x)*.6,y:from.y+(reach.y-from.y)*.6})}   // chases, cannot reach it
+      else{if(!net)legs.push({a:b,b:[b[0]+d[0]*28,b[1]+d[1]*28],t0:t0+f1,t1:t0+f1+sT*.3,h0:0,h1:0,A:5});
+        K[o].push({t:t0+f1+sT*.3,x:from.x+(reach.x-from.x)*.25,y:from.y+(reach.y-from.y)*.25})}
+    }
+    K.forEach(q=>q.sort((a,b)=>a.t-b.t));
+    A={S,legs,K,hits,t0:now,pre,sT,total:legs[legs.length-1].t1};
+    if(still){step(now+A.total+1);marks=[];draw(now);return}
     if(!raf)raf=requestAnimationFrame(frame);
   }
   document.querySelector('#corient').onclick=e=>{const b=e.target.closest('button');if(b){setO(b.dataset.o);try{localStorage.setItem('rl-court',o)}catch(e2){}}};
   if(window.ResizeObserver)new ResizeObserver(size).observe(el);else addEventListener('resize',size);
   setO(o);
-  return{play,draw,left:()=>A?Math.max(0,A.t0+A.pre+A.n*A.sT-performance.now()):0};
+  return{play,draw,left:()=>A?Math.max(0,A.t0+A.total-performance.now()):0};
 })();
-function playPath(pts,srv,y0){CV.play(pts,srv,y0)}
+function playPath(pts,srv,y0,win){CV.play(pts,srv,y0,win)}
 function animateRally(m){
   const L=m.last,el=$('#court');if(!L||$('#courtcard').hidden)return;
   const r=Math.random,bx=s=>s?93:7;
@@ -1363,7 +1435,7 @@ function animateRally(m){
     pts.push([x,yy,to]);hit=to}
   if(!L.err){const e=pts[pts.length-1];pts.push([e[2]?101:-1,e[1]+(r()-.5)*20,e[2]])}
   $('#rallyinfo').textContent=(L.kind==='ace'?'Ace':L.kind==='df'?'Double fault':L.shots+'-shot rally')+' · '+P[m.p[L.w]].n+' wins the point'+(m.rn?' · longest rally '+m.rmax+', average '+(m.rs/m.rn).toFixed(1):'');
-  playPath(pts,L.srv,y);
+  playPath(pts,L.srv,y,!L.err);
 }
 /* ---------- tabs ---------- */
 let tab='home';
