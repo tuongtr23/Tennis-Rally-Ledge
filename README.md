@@ -10,7 +10,7 @@ It is a personal learning project. The whole site is one static HTML page with i
 |---|---|
 | Home | This week's event, the next event, the top 5, recent champions and a scores panel |
 | Event | Any tour event from 2010 to now: schedule and results by day, players and seeds, and the draw rebuilt from results |
-| Live | Point-by-point replays of charted matches, a simulated live demo event, and final scores and serve statistics for any match since 2010 |
+| Live | Point-by-point replays of charted matches, a simulated live demo event, and any match since 2010 as a simulated live match that ends at its real final score |
 | Players | Profiles for the current top 100 and the leading title winners: bio, titles, season-by-season activity and a ranking history chart |
 | Rankings | Top 100 in a sortable table with filters |
 | H2H | Two players side by side, with their tour-level meetings since 2010 |
@@ -22,7 +22,11 @@ Players and matches are chosen with a search bar and a suggestion list. Every pa
 
 ## The court view
 
-On the Live page, each point is drawn on a canvas court that can be shown horizontally or vertically. The ball flies in an arc between bounce spots, with a ground shadow, a short trail and a dashed line to where it will land. Bounces outside the singles court are marked in red. For charted matches, the ball path comes from the recorded shot directions, so landing spots are approximate. The demo event's rallies are simulated.
+On the Live page, each point is drawn on a canvas court that can be shown horizontally or vertically. Every shot travels from the hitter's contact point to its bounce and on to the opponent's contact point. The players run to reach each ball in time, drift back toward the middle between shots, and chase winners they cannot reach. The ball has a ground shadow, a short trail and a dashed line to where it will land; bounces outside the singles court are marked in red. For charted matches, the ball path comes from the recorded shot directions, so landing spots are approximate. The demo event's rallies are simulated.
+
+## Simulated live matches
+
+Any match in the archive with a normal completed score can be watched point by point with **Watch it live (simulated)**. The set scores and tiebreak scores are real. The order of games and points, the rallies and the running statistics are generated. When the match's serve statistics are recorded, the simulation follows them (first serves in, aces, double faults and points won on serve). The same match always plays out the same way. Retirements, walkovers and match tiebreaks such as the Laver Cup's 10-point deciders are not simulated.
 
 ## Data and credits
 
@@ -36,10 +40,16 @@ On the Live page, each point is drawn on a canvas court that can be shown horizo
 
 Points per event in player activity are estimated from the standard ATP points table for the round reached. The Harbor Indoor Open on the Live page is a simulated demo event and is labelled as one.
 
-This site is not affiliated with the ATP. Because of the data licences, it must stay non-commercial and keep its credit lines. This site is served only for education purposes and no monetized actions.
+This site is not affiliated with the ATP. Because of the data licences, it must stay non-commercial and keep its credit lines.
 
+## Run it locally
 
+Open `site/index.html` in Chrome, Edge, Firefox or Safari. An internet connection is needed for the fonts and the map library. Phone file previews do not run JavaScript, so open the hosted site on a phone instead.
 
+## Publish it
+
+- **GitHub Pages:** `.github/workflows/pages.yml` publishes the `site` folder each time `main` changes. Set **Settings > Pages > Source** to **GitHub Actions**. Full steps are in `GITHUB_SETUP.md`.
+- **Cloudflare Pages:** use `site` as the output directory with no build command. Steps are in `DEPLOY.md`.
 
 ## Project layout
 
@@ -70,7 +80,7 @@ python3 tools/build_charted.py <charting CSV folder> site/data 30
 
 After `build_charted.py`, paste the contents of `site/data/index.json` into the `const CH=` line of `site/index.html`.
 
-## Not built yet (On progress)
+## Not built yet
 
 - A live score feed. The Worker in `tennis-worker/` is written but not deployed or connected.
 - Win-loss records, prize money and full head-to-head records before 2010.
