@@ -19,8 +19,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check the site folder
+        run: test -f site/index.html || (echo "site/index.html not found - the site folder must be at the top of the repository" && ls -la && exit 1)
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: site
       - id: deployment
